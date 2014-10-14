@@ -1,0 +1,131 @@
+#!/usr/bin/python
+
+import sys,os
+import time
+from simuluxe import *
+from simuluxe.codetools import *
+
+helpstring = """
+	
+	SIMULUXE simulation analysis tools
+	
+	operation
+	---------
+	addpath <path> .........: add a parent directory for a collection of
+	                          simulations to the local config file
+	addconfig <file> .......: add another local (python) settings file to
+	                          be called by the local config file
+	                          (~/.simuluxe_config.py)
+	status .................: list environment variables
+	
+	configuration
+	-------------
+	Paths and settings are loaded from `~/.simuluxe_config.py` which will
+	be created by default when you run addpath or addconfig. This file
+	sets the paths for simulation data (`datapaths`), extra configuration
+	descriptions of the simulations in a dictionary (`simdict`), and a list
+	of additional configuration files to load (`addconfig`).
+	
+	documentation
+	-------------
+	"""+'see: file:///'+os.getcwd()+'/docs/_build/html/index.html'
+	
+initconfig = """#!/usr/bin/python
+
+	import os,sys
+	
+	#---SIMULUXE LOCAL CONFIG FILE
+	
+	#---datapaths is a list of directories to search for simulation data
+	datapaths = []
+	
+	#---additional settings files to load
+	setfiles = []
+	
+	#---blank dictionary for adding simulation descriptions
+	simdict = {}
+	
+	#---location of the simuluxe execute scripts
+	"""
+
+#---FUNCTIONS
+#-------------------------------------------------------------------------------------------------------------
+
+def make_docs(mods=None):
+	'''Regenerate the documentation using sphinx-apidoc and code in simuluxe/script-make-docs.sh'''
+	if mods != None and (mods == 'clean' or 'clean' in mods): os.system('cd docs/;make clean')
+	else: os.system('./simuluxe/script-make-docs.sh '+os.path.abspath('.'))
+	
+def init_local_config():
+	'''Check for a local configuration in the home directory and make a blank one if absent.'''
+	if not os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
+		print 'The config file is absent so we will create it now and append paths.'
+		with open(os.path.expanduser('~/.simuluxe_config.py'),'w') as fp:
+			fp.write(niceblock(initconfig,newlines=True))
+			fp.write("slwd = '"+os.path.abspath(os.path.expanduser(os.getcwd()))+"'\n")
+			fp.write("sys.path.append(slwd)\n")
+			fp.write('\n#---customize below\n')
+
+def addpath(newpath):
+	'''Add extra paths to simulation data to the local configuration.'''
+	init_local_config()
+	if type(newpath) != list: newpath = [newpath]
+	for n in newpath:
+		fullpath = os.path.abspath(os.path.expanduser(n))
+		with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
+			if os.path.isdir(fullpath): fp.write("datapaths.append('"+fullpath+"')\n")
+			else: print 'invalid path'
+
+def addconfig(newpath):
+	'''Add extra configuration and settings files to the local configuration.'''
+	init_local_config()
+	if type(newpath) != list: newpath = [newpath]
+	for n in newpath:
+		fullpath = os.path.abspath(os.path.expanduser(n))
+		with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
+			if os.path.isfile(fullpath): fp.write("setfiles.append('"+fullpath+"')\n")
+			else: print 'invalid path'
+			
+def gitpush(comment):
+	'''Push the repository to github. Development purposes only.'''
+	print time.time()
+	print comment
+	time.strftime("%Y.%m.%d.%H%M",time.localtime())
+	print "\n---pushing to github---\n"
+	message = '"'+time.strftime("%Y.%m.%d.%H%M",time.localtime())+\
+		' : '+(' '.join(comment)).strip(' ')+'"'
+	print message
+	print '\ndirectory size:' 
+	os.system('du -h --max-depth=0')
+	go = True if raw_input("%s (y/N) " % '\ncontinue?').lower() == 'y' else False
+	if not go:
+		print 'aborting' 
+		return
+	sure = True if raw_input("%s (y/N) " % 'confirmed?').lower() == 'y' else False
+	if go and sure:
+		print '\npushing'
+		os.system('git add . --all')
+		os.system('git commit -a -m '+str(message))
+		os.system('git push')
+		
+def status():
+	'''Prints the current configuration.'''
+	init_local_config()
+	print '\nSTATUS:'
+	print '\nsimdict : holds metadata for your simulations'
+	print 'simdict = '+str(simdict)
+	print '\ndatapath : provides a parent directory where simulations can be found'
+	print 'datapaths = '+str(datapaths)
+	print '\nsetfiles : points to additional configuration files which may add to datapath and simdict'
+	print 'setfiles = '+str(setfiles)
+
+#---MAIN
+#-------------------------------------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+	if len(sys.argv) == 1:
+		print niceblock(helpstring,newlines=True)
+	elif len(sys.argv) > 1 and sys.argv[2:] != []: 
+		globals()[sys.argv[1]](sys.argv[2:])
+	else: globals()[sys.argv[1]]()
+
