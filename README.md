@@ -12,7 +12,13 @@ Requires
 
 	1. Python version 2.7 or higher.
 	2. Numpy and Scipy for mathematical operations.
-	3. The [MDAnalysis](https://code.google.com/p/mdanalysis/) package.
+	3. The MDAnalysis package for reading and slicing trajectories.
+	4. Sphinx python documatation generator.
+	
+Installation
+------------
+
+Download and run ``make`` for instructions. Otherwise, see the documentation.
 
 Contributing
 ------------
