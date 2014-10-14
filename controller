@@ -88,6 +88,7 @@ def addconfig(newpath):
 			
 def gitpush(comment):
 	'''Push the repository to github. Development purposes only.'''
+	os.system('./controller make_docs clean')
 	print time.time()
 	print comment
 	time.strftime("%Y.%m.%d.%H%M",time.localtime())
