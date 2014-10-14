@@ -13,7 +13,7 @@ Requires
 	1. Python version 2.7 or higher.
 	2. Numpy and Scipy for mathematical operations.
 	3. The MDAnalysis package for reading and slicing trajectories.
-	4. Sphinx python documatation generator.
+	4. Sphinx python documentation generator.
 	
 Installation
 ------------
@@ -23,4 +23,4 @@ Download and run ``make`` for instructions. Otherwise, see the documentation.
 Contributing
 ------------
 
-Ryan Bradley. E-mail him for questions.
+This project was created by Ryan Bradley, who will entertain any reasonable additions to the code via a pull request. Please send any comments or questions to [bradleyrp](mailto:bradleyrp@gmail.com).
