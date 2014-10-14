@@ -16,7 +16,7 @@ Simuluxe is a collection of modeling and simulation analysis tools designed for 
 Deployment
 ----------
 
-The purpose of this code is to help researchers in computational biophysics analyze datasets quickly and easily, with a particular emphasis on analyzing large batches of simulations, possibly generated with [automacs](https://github.com/bradleyrp/automacs). The procedure for analyzing simulations is as follows.
+The purpose of this code is to help researchers in computational biophysics analyze datasets quickly and easily, with a particular emphasis on analyzing large batches of simulations, possibly generated with e.g. `automacs <https://github.com/bradleyrp/automacs>`_. The procedure for analyzing simulations is as follows.
 
 1. Run a simulation and store the trajectory locally.
 2. Download the ``simuluxe`` package.
