@@ -5,19 +5,27 @@ import os
 import numpy as np
 from numpy import array,shape
 from simuluxe.codetools import *
+
+missing_libxdr = \
+	"""
+	Cannot load the libxdrfile package, which is
+	necessary for directly reading the
+	velocities. Get the libxdrfile package via wget
+	ftp://ftp.gromacs.org/pub/contrib/xdrfile-1.1.4.tar.gz and navigate to
+	http://www.gromacs.org/Developer_Zone/Programming_Guide/XTC_Library
+	for details.
+	"""
+
 try:
 	import MDAnalysis.coordinates.xdrfile.libxdrfile as libxdrfile
 	from MDAnalysis.coordinates.xdrfile.libxdrfile import \
 		xdrfile_open, xdrfile_close, read_trr_natoms, read_trr, DIM, exdrOK
-except: 
-	status("""
-		Cannot load the libxdrfile package, which is
-		necessary for directly reading the
-		velocities. Get the libxdrfile package via wget
-		ftp://ftp.gromacs.org/pub/contrib/xdrfile-1.1.4.tar.gz and navigate to
-		http://www.gromacs.org/Developer_Zone/Programming_Guide/XTC_Library
-		for details.
-		""")
+except:
+	try:
+		import MDAnalysis.coordinates.xdrfile.libxdrfile2 as libxdrfile2
+		from MDAnalysis.coordinates.xdrfile.libxdrfile2 import \
+			xdrfile_open, xdrfile_close, read_trr_natoms, read_trr, DIM, exdrOK	
+	except: status(missing_libxdr)
 		
 def trajectory_read(trrfile,get='velocities'):
 	'''
