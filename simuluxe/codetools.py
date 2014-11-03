@@ -51,3 +51,13 @@ def status(string,start=None,i=None,looplen=None,blocked=False):
 def checktime():
 	'''Report the current time.'''
 	status('status: time = '+str(1./60*(time.time()-global_start_time))+' minutes')
+	
+def confirm():
+	'''Generic function to check with the user.'''
+	go = True if raw_input("%s (y/N) " % 'continue?').lower() == 'y' else False
+	if not go:
+		print 'aborting' 
+		return False
+	sure = True if raw_input("%s (y/N) " % 'confirmed?').lower() == 'y' else False
+	if go and sure: return True
+

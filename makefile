@@ -18,6 +18,11 @@ addpath:
 #---add another configuration file
 addconfig:
 	./controller addconfig ${RUN_ARGS}
+
+#---parse all datapaths and add dictionaries to a new configfile
+treeparse:
+	./controller treeparse ${RUN_ARGS}
+
 	
 #---push to github (development)
 gitpush:

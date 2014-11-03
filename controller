@@ -4,6 +4,7 @@ import sys,os
 import time
 from simuluxe import *
 from simuluxe.codetools import *
+from simuluxe.treeparse import *
 
 helpstring = """
 	
@@ -98,12 +99,7 @@ def gitpush(comment):
 	print message
 	print '\ndirectory size:' 
 	os.system('du -h --max-depth=0')
-	go = True if raw_input("%s (y/N) " % '\ncontinue?').lower() == 'y' else False
-	if not go:
-		print 'aborting' 
-		return
-	sure = True if raw_input("%s (y/N) " % 'confirmed?').lower() == 'y' else False
-	if go and sure:
+	if confirm():
 		print '\npushing'
 		os.system('git add . --all')
 		os.system('git commit -a -m '+str(message))
@@ -119,14 +115,38 @@ def status():
 	print 'datapaths = '+str(datapaths)
 	print '\nsetfiles : points to additional configuration files which may add to datapath and simdict'
 	print 'setfiles = '+str(setfiles)
+	
+def treeparse(infofile):
+	'''
+	Parse simulation data directories, load paths into a new configuration file, and check that it's in
+	the config file.
+	'''
+	init_local_config()
+	if type(infofile) == list and len(infofile) != 1: raise Exception('except: too many arguments')
+	else: infofile = infofile[0]
+	infofile = os.path.abspath(os.path.expanduser(infofile))
+	if os.path.isfile(infofile):
+		print 'file exists but I will overwrite'
+		if not confirm(): return
+	simdict = findsims()
+	with open(infofile,'w') as fp:
+		fp.write('#!/usr/bin/env python\n\n')
+		for key in simdict.keys():
+			fp.write("simdict['"+key+"'] = \\\n")
+			formstring = json.dumps(simdict[key],indent=4)
+			for line in formstring.split('\n'):
+				fp.write('    '+line+'\n')
+			fp.write('\n')
+	init_local_config()
+	config = dict()
+	execfile(os.path.expanduser('~/.simuluxe_config.py'),config)
+	if infofile not in config['setfiles']: addconfig(infofile)
 
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-	if len(sys.argv) == 1:
-		print niceblock(helpstring,newlines=True)
-	elif len(sys.argv) > 1 and sys.argv[2:] != []: 
-		globals()[sys.argv[1]](sys.argv[2:])
+	if len(sys.argv) == 1: print niceblock(helpstring,newlines=True)
+	elif len(sys.argv) > 1 and sys.argv[2:] != []: globals()[sys.argv[1]](sys.argv[2:])
 	else: globals()[sys.argv[1]]()
 
