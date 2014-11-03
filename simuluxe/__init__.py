@@ -15,8 +15,10 @@ if os.path.isfile('/etc/pythonstart'): execfile('/etc/pythonstart')
 #---universal imports
 import numpy as np
 from numpy import array,shape
-import matplotlib as mpl
-import pylab as plt
+try:
+	import matplotlib as mpl
+	import pylab as plt
+except: print 'matplotlib/pylab not found'
 
 #---json to format dictionaries (note that this is fairly trivial)
 import json

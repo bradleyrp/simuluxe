@@ -26,10 +26,18 @@ helpstring = """
 	sets the paths for simulation data (`datapaths`), extra configuration
 	descriptions of the simulations in a dictionary (`simdict`), and a list
 	of additional configuration files to load (`addconfig`).
+
+	quickstart
+	----------
+	Here is my favorite command for refreshing everything and starting a
+	new database from a particular folder:
+	
+	rm ~/.simuluxe_config.py;make addpath ~/membrane-v5xx;make treeparse ~/worker/simuluxe-data/simdict.py
 	
 	documentation
 	-------------
 	"""+'see: file:///'+os.getcwd()+'/docs/_build/html/index.html'
+
 	
 initconfig = """#!/usr/bin/python
 
@@ -59,13 +67,20 @@ def make_docs(mods=None):
 	
 def init_local_config():
 	'''Check for a local configuration in the home directory and make a blank one if absent.'''
-	if not os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
+	confpath = os.path.expanduser('~/.simuluxe_config.py')
+	if not os.path.isfile(confpath):
 		print 'The config file is absent so we will create it now and append paths.'
 		with open(os.path.expanduser('~/.simuluxe_config.py'),'w') as fp:
 			fp.write(niceblock(initconfig,newlines=True))
-			fp.write("slwd = '"+os.path.abspath(os.path.expanduser(os.getcwd()))+"'\n")
+			slwd = os.path.abspath(os.path.expanduser(os.getcwd()))
+			fp.write("slwd = '"+slwd+"'\n")
 			fp.write("sys.path.append(slwd)\n")
 			fp.write('\n#---customize below\n')
+		#---push these variables to globals for consistency with downstream programs that might check
+		globals()['slwd'] = slwd
+		globals()['datapaths'] = []
+		globals()['setfiles'] = []
+		globals()['simdict'] = {}
 
 def addpath(newpath):
 	'''Add extra paths to simulation data to the local configuration.'''
@@ -122,6 +137,7 @@ def treeparse(infofile):
 	the config file.
 	'''
 	init_local_config()
+	print datapaths
 	if type(infofile) == list and len(infofile) != 1: raise Exception('except: too many arguments')
 	else: infofile = infofile[0]
 	infofile = os.path.abspath(os.path.expanduser(infofile))
@@ -137,7 +153,6 @@ def treeparse(infofile):
 			for line in formstring.split('\n'):
 				fp.write('    '+line+'\n')
 			fp.write('\n')
-	init_local_config()
 	config = dict()
 	execfile(os.path.expanduser('~/.simuluxe_config.py'),config)
 	if infofile not in config['setfiles']: addconfig(infofile)

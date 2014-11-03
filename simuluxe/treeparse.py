@@ -2,7 +2,8 @@
 
 #---imports
 from os.path import expanduser
-execfile(expanduser('~/.simuluxe_config.py'))
+try: execfile(expanduser('~/.simuluxe_config.py'))
+except: print 'config file not available but one will be generated'
 from simuluxe import *
 
 #---libraries
@@ -18,6 +19,11 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None):
 	and valid subdirectories (of the form "basename-vNUM/xNUM-descriptor" e.g. "membrane-v567/s8-sim".
 	'''
 
+	#---due to imports we must manually get config
+	config = dict()
+	execfile(expanduser('~/.simuluxe_config.py'),config)
+	datapaths = config['datapaths']
+	
 	#--dictionary to hold simulation paths
 	simtree = dict()
 
