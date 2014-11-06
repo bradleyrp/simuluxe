@@ -113,15 +113,20 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 									str((int(i) if round(i) == i else float(i))) for i in 
 									[starttime,starttime+nframes*timestep,timestep]]))
 							elif typecheck == 'edr':
-								starttime = perfectregex(catch,r'(index\s+0)',split=None)
-								if starttime != -1: starttime = float(starttime.split('t:')[-1])
-								endtime = perfectregex(catch,r'^Last energy frame read',split=None)
-								if endtime != -1: endtime = float(endtime.split('time')[-1])
-								if any([i == -1 for i in [starttime,endtime]]): break
-								if typecheck+'stamp' not in step.keys(): step[typecheck+'stamp'] = []
-								step[typecheck+'stamp'].append('-'.join([
-									str((int(i) if round(i) == i else float(i))) for i in 
-									[starttime,endtime]]))			
+								#---note that some energy files have errors so we add dummy stamps to preserve order
+								if re.search('WARNING: there may be something wrong with energy file',
+									'\n'.join(catch)):
+									step[typecheck+'stamp'].append('')
+								else:
+									starttime = perfectregex(catch,r'(index\s+0)',split=None)
+									if starttime != -1: starttime = float(starttime.split('t:')[-1])
+									endtime = perfectregex(catch,r'^Last energy frame read',split=None)
+									if endtime != -1: endtime = float(endtime.split('time')[-1])
+									if any([i == -1 for i in [starttime,endtime]]): break
+									if typecheck+'stamp' not in step.keys(): step[typecheck+'stamp'] = []
+									step[typecheck+'stamp'].append('-'.join([
+										str((int(i) if round(i) == i else float(i))) for i in 
+										[starttime,endtime]]))
 							else: raise Exception('except: unclear type for time check')
 						trajcount += 1
 	

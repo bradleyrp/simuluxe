@@ -206,12 +206,11 @@ def timeslice(arglist):
 	if len(timeseg) != 1: raise Exception('except: unclear time slice')
 	else: timeseg = timeseg[0]	
 	make_timeslice(simname,stepname,timeseg,('xtc' if xtc else 'trr'))
-	
+
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
-if __name__ == "__main__":
-	if len(sys.argv) == 1: print niceblock(helpstring,newlines=True)
-	elif len(sys.argv) > 1 and sys.argv[2:] != []: globals()[sys.argv[1]](sys.argv[2:])
-	else: globals()[sys.argv[1]]()
+if __name__ == "__main__": 
+	if len(sys.argv) < 2: print niceblock(helpstring,newlines=True)
+	else: globals()[sys.argv[1]](sys.argv[2:])
 

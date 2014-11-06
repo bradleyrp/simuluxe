@@ -1,40 +1,21 @@
 
-#---collect extra arguments
-RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+#---valid function names from the python script
+TARGETS := $(shell perl -n -e '@parts = /^def\s+[a-z,_]+/g; $$\ = "\n"; print for @parts;' controller | awk '{print $$2}')
+
+#---collect arguments
+RUN_ARGS := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(RUN_ARGS):;@:)
 
-#---print help
-all:
-	./controller
+#---hack to always run makefile interfaced with python
+scripts=controller
+$(shell touch $(scripts))
+checkfile=.pipeline_up_to_date
+$(shell touch $checkfile)
 
-#---remake documenatation
-docs: simuluxe sources/docs
-	./controller make_docs ${RUN_ARGS} 
+$(checkfile): $(scripts)
+	touch $(checkfile)
+	echo "Launching some commands now."
+	./controller ${RUN_ARGS}
 
-#---add a datapath to the local configuration file
-addpath:
-	./controller addpath ${RUN_ARGS}
-
-#---add another configuration file
-addconfig:
-	./controller addconfig ${RUN_ARGS}
-
-#---catalog simulations and collect timestamps
-catalog:
-	./controller catalog ${RUN_ARGS}
-	
-#---push to github (development)
-gitpush:
-	./controller gitpush ${RUN_ARGS}
-
-#---report the configuration
-report:
-	./controller report ${RUN_ARGS}
-	
-#---get available times
-avail:
-	./controller avail ${RUN_ARGS}
-	
-#---get available times
-timeslice:
-	./controller timeslice ${RUN_ARGS}
+default: $(checkfile)
+$(TARGETS): $(checkfile)
