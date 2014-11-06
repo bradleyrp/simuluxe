@@ -60,4 +60,16 @@ def confirm():
 		return False
 	sure = True if raw_input("%s (y/N) " % 'confirmed?').lower() == 'y' else False
 	if go and sure: return True
+	
+def perfectregex(chopped,regex,split=None,num=1):
+	'''
+	Searches a newline-split file in a list for a regex and makes sure there is only one match.
+	'''
+	chopped = '\n'.join([chopped] if type(chopped) == str else chopped)
+	if re.search('error',chopped): return -1
+	chopped = re.sub('\r','\n',chopped).split('\n')
+	find = [j if split == None else j.split()[split] for j in chopped if re.search(regex,j)]
+	if num == None: return find
+	if len(find) != num: return -1
+	else: return (find[0] if num == 1 else find)
 

@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
+#---imports
 import os,sys
+
+#---json to format dictionary files
+import json
 
 #---conditional simuluxe imports
 import os
@@ -12,7 +16,7 @@ if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
 #---autocomplete and other bells and whistles
 if os.path.isfile('/etc/pythonstart'): execfile('/etc/pythonstart')
 
-#---universal imports
+#---universal library imports
 import numpy as np
 from numpy import array,shape
 try:
@@ -20,5 +24,8 @@ try:
 	import pylab as plt
 except: print 'matplotlib/pylab not found'
 
-#---json to format dictionaries (note that this is fairly trivial)
-import json
+#---import all submodules
+from codetools import *
+from treeparse import *
+from io import *
+
