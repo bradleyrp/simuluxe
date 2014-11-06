@@ -2,6 +2,7 @@
 
 import sys,os
 import time
+import copy
 from simuluxe import *
 
 helpstring = """
@@ -32,14 +33,15 @@ helpstring = """
 	Then the catalog function searches for all edr files and uses them to quickly set the 
 	time stamps. The paths and timestamps are stored in simdict for later.
 	
-	make addpath DATA; make catalog time ~/worker/simuluxe-data/simdict.py edrtime
+	make addpath DATA
+	make catalog ~/worker/simuluxe-data/simdict.py edrtime
 	
 	You can also list available timestamps for a simulation named e.g. keyword-v001
 	from the edr files using this command. The only available keyword is "membrane" since
 	this is the primary use for this analysis. Using the keyword 'slices' instead will
 	return all prepared time slices.
 	
-	make avail membrane-v509
+	make avail membrane-v509 membrane-v510
 	make avail slices
 
 	To make a time slice from these trajectory use the following command. After suppling the
@@ -73,13 +75,21 @@ initconfig = """#!/usr/bin/python
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
 
-def make_docs(mods=None):
-	'''Regenerate the documentation using sphinx-apidoc and code in simuluxe/script-make-docs.sh'''
+def docs(mods=None):
+
+	'''
+	Regenerate the documentation using sphinx-apidoc and code in simuluxe/script-make-docs.sh
+	'''
+
 	if mods != None and (mods == 'clean' or 'clean' in mods): os.system('cd docs/;make clean')
 	else: os.system('./simuluxe/script-make-docs.sh '+os.path.abspath('.'))
 	
 def init_local_config():
-	'''Check for a local configuration in the home directory and make a blank one if absent.'''
+	
+	'''
+	Check for a local configuration in the home directory and make a blank one if absent.
+	'''
+	
 	confpath = os.path.expanduser('~/.simuluxe_config.py')
 	if not os.path.isfile(confpath):
 		print 'config file is absent so we will create it now and append paths.'
@@ -97,28 +107,40 @@ def init_local_config():
 		return True
 	else: return False
 
-def addpath(newpath):
-	'''Add extra paths to simulation data to the local configuration.'''
+def addpath(pathdir):
+
+	'''
+	Add extra paths to simulation data to the local configuration.
+	'''
+
 	new = init_local_config()
-	if type(newpath) != list: newpath = [newpath]
-	for n in newpath:
+	if type(pathdir) != list: pathdir = [pathdir]
+	for n in pathdir:
 		fullpath = os.path.abspath(os.path.expanduser(n))
 		if ((not new and fullpath not in datapaths) or new) and os.path.isdir(fullpath):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("datapaths.append('"+fullpath+"')\n")
 
-def addconfig(newpath):
-	'''Add extra configuration and settings files to the local configuration.'''
+def addconfig(pathfile):
+
+	'''
+	Add extra configuration and settings files to the local configuration.
+	'''
+	
 	new = init_local_config()
-	if type(newpath) != list: newpath = [newpath]
-	for n in newpath:
+	if type(pathfile) != list: pathfile = [pathfile]
+	for n in pathfile:
 		fullpath = os.path.abspath(os.path.expanduser(n))
 		if ((not new and fullpath not in setfiles) or new) and os.path.isfile(fullpath):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			
 def gitpush(comment):
-	'''Push the repository to github. Development purposes only.'''
+	
+	'''
+	Push the repository to github. Development purposes only.
+	'''
+	
 	os.system('./controller make_docs clean')
 	print time.time()
 	print comment
@@ -136,7 +158,11 @@ def gitpush(comment):
 		os.system('git push')
 		
 def report():
-	'''Prints the current configuration.'''
+	
+	'''
+	Prints the current configuration.
+	'''
+	
 	init_local_config()
 	print '\nSTATUS:'
 	print '\nsimdict : holds metadata for your simulations'
@@ -147,10 +173,12 @@ def report():
 	print 'setfiles = '+str(setfiles)
 	
 def catalog(arglist):
+
 	'''
 	Parse simulation data directories, load paths into a new configuration file, and check that it's in
 	the config file.
 	'''
+	
 	new = init_local_config()
 	#---note that a target python settings file must always be the first argument
 	if type(arglist) == list: infofile = arglist[0]
@@ -170,26 +198,39 @@ def catalog(arglist):
 			fp.write('\n')
 	if new or infofile not in setfiles: addconfig(infofile)
 	
-def avail(arglist):
-	'''List available time slices for a simulation according to its root name.'''
-	if 'slices' in arglist: 
+def avail(simname,slices=False):
+	
+	'''
+	List available time slices for a simulation according to its root name.
+	'''
+	
+	if type(simname) != list: simname = [simname]
+	if simname == []: simname = simdict.keys()
+	if slices:
 		#---specifically list the prepared slices
-		for simname in simdict.keys():
-			if 'steps' in simdict[simname].keys():
-				for step in simdict[simname]['steps']:
+		for sn in simname:
+			if 'steps' in simdict[sn].keys():
+				for step in simdict[sn]['steps']:
 					if 'trajs' in step.keys():
 						for traj in step['trajs']:
-							print simname.ljust(40,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
+							print sn.ljust(30,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
 	else:
 		#---list slices according to time slices
-		if 'steps' in simdict[arglist[0]].keys():
-			for step in simdict[arglist[0]]['steps']:
-				if 'edrstamp' in step:
-					for stamp in step['edrstamp']:
-						print step['dir'].ljust(20)+stamp
+		for sn in simname:
+			if 'steps' in simdict[sn].keys() and any(['edrstamp' in step for step in simdict[sn]['steps']]):
+				print '\nsimulation = '+str(sn)
+				for step in simdict[sn]['steps']:
+					if 'edrstamp' in step:
+						for stamp in step['edrstamp']:
+							ts = stamp.split('-')
+							print step['dir'].ljust(30,'.')+ts[0].rjust(20,'.')+ts[1].rjust(20,'.')
 					
 def timeslice(arglist):
-	'''Make a timeslice of a simulation.'''
+	
+	'''
+	Make a timeslice of a simulation.
+	'''
+	
 	xtc = True if 'xtc' in arglist else False
 	trr = True if 'trr' in arglist else False
 	if xtc and trr: raise Exception('except: multiple slice trajectory formats')
@@ -206,11 +247,44 @@ def timeslice(arglist):
 	if len(timeseg) != 1: raise Exception('except: unclear time slice')
 	else: timeseg = timeseg[0]	
 	make_timeslice(simname,stepname,timeseg,('xtc' if xtc else 'trr'))
+	
+def arguer(arglist):
+
+	'''
+	Custom argument parser for cooperation with makefile-python interface.
+	'''
+
+	#---define the arguments expected for each function
+	argdict = {
+		'avail':['simname','slices'],
+		}
+	#---return kwargs
+	kwargs = dict()
+	#---only ordering here is the requirement that the first word is the python function
+	func = arglist[0]
+	if arglist[0] in argdict.keys():
+		#---copy the dictionary for this function so we can iteratively handle each item
+		argd = copy.deepcopy(argdict[func])
+		#---special keywords are handled below
+		if 'simname' in argd:
+			simnames = [a for a in arglist[1:] if any([re.match(kn,a) 
+				for kn in ['membrane','protein']])]
+			argd.pop(argd.index('simname'))
+			kwargs['simname'] = simnames
+		#---all remaining keywords are handled as flags
+		for a in argd:
+			kwargs[a] = True if a in arglist[1:] else False
+		return kwargs
+	#---if no custom argument handling then return none
+	else: return None
 
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__": 
 	if len(sys.argv) < 2: print niceblock(helpstring,newlines=True)
-	else: globals()[sys.argv[1]](sys.argv[2:])
+	else: 
+		argmods = arguer(sys.argv[1:])
+		if argmods != None: globals()[sys.argv[1]](**argmods)
+		else: globals()[sys.argv[1]](sys.argv[2:])
 
