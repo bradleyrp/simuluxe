@@ -1,0 +1,1301 @@
+#!/usr/bin/env python
+
+simdict['membrane-v536-v13-restraints-too-long'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "dir": "s3-equil"
+            }, 
+            {
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v534'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v702-exo70-monomer'] = \
+    {
+        "steps": [
+            {
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s0-sources"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s1-assemble"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s3-min"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-v9-stronger-posres-still-interliminal'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s3-equil"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-soft-100-pack-again'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "dir": "s3-equil"
+            }, 
+            {
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v612-enthx1-12800'] = \
+    {
+        "steps": [
+            {
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s0-sources"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s1-assemble"
+            }, 
+            {
+                "edr": [
+                    "md.part0004.edr"
+                ], 
+                "trr": [
+                    "md.part0004.trr"
+                ], 
+                "xtc": [
+                    "md.part0004.xtc"
+                ], 
+                "tpr": [
+                    "md.part0003.tpr", 
+                    "md.part0004.tpr"
+                ], 
+                "dir": "t1-pressure-fix"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s3-min"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s4-sim"
+            }, 
+            {
+                "tpr": [
+                    "md.part0007.tpr"
+                ], 
+                "dir": "t4-lonestar", 
+                "trajs": [
+                    "md.part0007.75000-175000-200.trr"
+                ]
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr", 
+                    "md.part0002.edr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc", 
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "trajs": [
+                    "md.part0001.500-1000-20.xtc", 
+                    "md.part0001.500-600-10.xtc", 
+                    "md.part0001.500-1500-100.xtc"
+                ], 
+                "trr": [
+                    "md.part0001.trr", 
+                    "md.part0002.trr"
+                ], 
+                "dir": "s5-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s6-pip2-fix"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s7-pip2-fix-begin-start"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr", 
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr", 
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc", 
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s8-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0003.edr"
+                ], 
+                "xtc": [
+                    "md.part0003.xtc"
+                ], 
+                "tpr": [
+                    "md.part0002.tpr", 
+                    "md.part0003.tpr"
+                ], 
+                "trajs": [
+                    "md.part0003.10000-80000-200.xtc"
+                ], 
+                "trr": [
+                    "md.part0003.trr"
+                ], 
+                "dir": "s9-trestles"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-chl1-escaped'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s3-equil"
+            }, 
+            {
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v701-exo70-anti-dilute'] = \
+    {
+        "steps": [
+            {
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s0-sources"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s1-assemble"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s3-min"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s4-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s5-sim"
+            }, 
+            {
+                "dir": "s5-look"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr", 
+                    "md.part0003.edr", 
+                    "md.part0004.edr", 
+                    "md.part0005.edr", 
+                    "md.part0006.edr"
+                ], 
+                "trr": [
+                    "md.part0006.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc", 
+                    "md.part0003.xtc", 
+                    "md.part0004.xtc", 
+                    "md.part0005.xtc", 
+                    "md.part0006.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr", 
+                    "md.part0003.tpr", 
+                    "md.part0004.tpr", 
+                    "md.part0005.tpr", 
+                    "md.part0006.tpr"
+                ], 
+                "dir": "s6-lonestar"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s6-pip2-fix-begin-start"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc", 
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s7-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-v11-somehow-worked'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s3-equil"
+            }, 
+            {
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v613-enthx2-12800'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-auto-membed"
+            }, 
+            {
+                "dir": "s1-auto-membed-tooclose"
+            }, 
+            {
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "t5-sim-kraken"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v614-enthx4-12800'] = \
+    {
+        "steps": [
+            {
+                "dir": "s0-original", 
+                "trajs": [
+                    "md.part0002.2000-140500-100.trr"
+                ]
+            }, 
+            {
+                "dir": "s1-auto-membed"
+            }, 
+            {
+                "dir": "s1-auto-membed-trash"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "trajs": [
+                    "md.part0002.40000-140000-200.xtc"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "dir": "s6-sim-lonestar"
+            }, 
+            {
+                "edr": [
+                    "md.part0003.edr"
+                ], 
+                "trr": [
+                    "md.part0003.trr"
+                ], 
+                "xtc": [
+                    "md.part0003.xtc"
+                ], 
+                "tpr": [
+                    "md.part0002.tpr", 
+                    "md.part0003.tpr"
+                ], 
+                "dir": "s7-pressure-fix"
+            }, 
+            {
+                "edr": [
+                    "md.part0003.edr", 
+                    "md.part0004.edr"
+                ], 
+                "trr": [
+                    "md.part0003.trr", 
+                    "md.part0004.trr"
+                ], 
+                "xtc": [
+                    "md.part0003.xtc", 
+                    "md.part0004.xtc"
+                ], 
+                "tpr": [
+                    "md.part0002.tpr", 
+                    "md.part0003.tpr", 
+                    "md.part0004.tpr"
+                ], 
+                "dir": "s8-pip2-fix"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "dir": "s3-equil"
+            }, 
+            {
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-v10'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "dir": "s3-equil"
+            }, 
+            {
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v533'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v532'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v531'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v530'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v511'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v510'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-v12-notreally'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s3-equil"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v515'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v514'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v550'] = \
+    {
+        "steps": [
+            {
+                "edr": [
+                    "md.part0008.edr"
+                ], 
+                "xtc": [
+                    "md.part0008.xtc"
+                ], 
+                "tpr": [
+                    "md.part0005.tpr", 
+                    "md.part0006.tpr", 
+                    "md.part0007.tpr", 
+                    "md.part0008.tpr"
+                ], 
+                "trajs": [
+                    "md.part0006.300000-400000-200.xtc"
+                ], 
+                "trr": [
+                    "md.part0008.trr"
+                ], 
+                "dir": "u0-sim-copy"
+            }, 
+            {
+                "dir": "u1-stress-1.0-skip10"
+            }, 
+            {
+                "tpr": [
+                    "md.part0008.tpr"
+                ], 
+                "dir": "v1-lonestar", 
+                "trajs": [
+                    "md.part0010.400000-500000-160.xtc"
+                ]
+            }, 
+            {
+                "dir": "u2-stress-1.0"
+            }, 
+            {
+                "dir": "u3-stress-1.0-framewise"
+            }, 
+            {
+                "dir": "u4-stress-1.0-framewise"
+            }, 
+            {
+                "dir": "u5-stress-1.0-framewise-md.part0006.300000-400000-200"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v700-exo70-dilute'] = \
+    {
+        "steps": [
+            {
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s0-sources"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s1-assemble"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s1-assemble-plustwo"
+            }, 
+            {
+                "dir": "s2-embed-skipped"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s3-min"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s3-min-plustwo"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s4-sim-plustwo"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s4-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s5-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s5-sim-plustwo"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s6-pip2-fix-begin-start"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s7-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s8-trestles-32bench"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s8-trestles"
+            }, 
+            {
+                "edr": [
+                    "md.part0003.edr", 
+                    "md.part0004.edr", 
+                    "md.part0005.edr", 
+                    "md.part0006.edr"
+                ], 
+                "trr": [
+                    "md.part0003.trr", 
+                    "md.part0004.trr", 
+                    "md.part0006.trr"
+                ], 
+                "xtc": [
+                    "md.part0003.xtc", 
+                    "md.part0005.xtc", 
+                    "md.part0006.xtc"
+                ], 
+                "tpr": [
+                    "md.part0002.tpr", 
+                    "md.part0003.tpr", 
+                    "md.part0004.tpr", 
+                    "md.part0005.tpr", 
+                    "md.part0006.tpr"
+                ], 
+                "dir": "s9-lonestar"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-soft-100-pack'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "dir": "s3-equil"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v597-exo70-2xmutant'] = \
+    {
+        "steps": [
+            {
+                "xtc": [
+                    "md.part0000.xtc"
+                ], 
+                "tpr": [
+                    "md.part0000.tpr"
+                ], 
+                "dir": "s0-trajectory"
+            }, 
+            {
+                "xtc": [
+                    "md.part0002.xtc", 
+                    "md.part0003.xtc", 
+                    "md.part0004.xtc", 
+                    "md.part0005.xtc"
+                ], 
+                "dir": "s1-trajectory-full"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-chl1-escaped2'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "dir": "s3-equil"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v616-octamer-close'] = \
+    {
+        "steps": [
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "u1-adhesion"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "u2-min"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "u3-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "u4-sim"
+            }, 
+            {
+                "dir": "u6-trestles", 
+                "trajs": [
+                    "md.part0004.110000-209900-200.xtc", 
+                    "md.part0004.61100-117100-1000.xtc", 
+                    "md.part0005.210000-310000-200.xtc"
+                ]
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "tpr": [
+                    "md.part0005.tpr"
+                ], 
+                "dir": "u7-tune-min"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "u8-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v620'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "s3-equil"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "trajs": [
+                    "md.part0003.50000-80000-50.xtc"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v615-octamer'] = \
+    {
+        "steps": [
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "u1-adhesion"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "u2-min"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "u3-membed-skip"
+            }, 
+            {
+                "edr": [
+                    "md.part0001.edr"
+                ], 
+                "trr": [
+                    "md.part0001.trr"
+                ], 
+                "xtc": [
+                    "md.part0001.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "u3-sim"
+            }, 
+            {
+                "edr": [
+                    "md.part0002.edr"
+                ], 
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr", 
+                    "md.part0002.tpr"
+                ], 
+                "dir": "u4-sim"
+            }, 
+            {
+                "trr": [
+                    "md.part0002.trr"
+                ], 
+                "xtc": [
+                    "md.part0002.xtc"
+                ], 
+                "tpr": [
+                    "md.part0001.tpr"
+                ], 
+                "dir": "u4-sim-original"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v598-exo70-control'] = \
+    {
+        "steps": [], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v509'] = \
+    {
+        "steps": [
+            {
+                "dir": "s2-construct"
+            }, 
+            {
+                "edr": [
+                    "md.part0050.edr"
+                ], 
+                "trr": [
+                    "md.part0050.trr"
+                ], 
+                "tpr": [
+                    "md.part0048.tpr"
+                ], 
+                "dir": "s7-trestles"
+            }, 
+            {
+                "edr": [
+                    "md.part0051.edr"
+                ], 
+                "trr": [
+                    "md.part0051.trr"
+                ], 
+                "dir": "s8-kraken"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
+simdict['membrane-v536-v8-not-bad'] = \
+    {
+        "steps": [
+            {
+                "dir": "s1-build-lipidgrid"
+            }, 
+            {
+                "key_files": [
+                    "system.gro"
+                ], 
+                "dir": "s2-build-bilayer"
+            }, 
+            {
+                "dir": "s3-equil"
+            }, 
+            {
+                "dir": "s4-sim"
+            }
+        ], 
+        "root": "/home/rpb/compbio"
+    }
+
