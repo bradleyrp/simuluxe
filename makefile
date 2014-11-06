@@ -10,11 +10,9 @@ $(eval $(RUN_ARGS):;@:)
 scripts=controller
 $(shell touch $(scripts))
 checkfile=.pipeline_up_to_date
-$(shell touch $checkfile)
 
 $(checkfile): $(scripts)
 	touch $(checkfile)
-	echo "Launching some commands now."
 	./controller ${RUN_ARGS}
 
 default: $(checkfile)
