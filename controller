@@ -255,7 +255,7 @@ def arguer(arglist):
 
 	#---define the arguments expected for each function
 	argdict = {
-		'avail':['simname','slices'],
+	'avail':['simname','slices'],
 		}
 	#---return kwargs
 	kwargs = dict()
