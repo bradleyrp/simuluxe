@@ -93,19 +93,17 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 									stderr=subprocess.PIPE,shell=True)
 								catch = p.communicate(input=None)
 								#---only check edr files for time stamps because fast
-								if re.search('WARNING: there may be something wrong with energy file',
+								if not re.search('WARNING: there may be something wrong with energy file',
 									'\n'.join(catch)):
-									step[typecheck+'stamp'].append('')
-								else:
 									starttime = perfectregex(catch,r'(index\s+0)',split=None)
 									if starttime != -1: starttime = float(starttime.split('t:')[-1])
 									endtime = perfectregex(catch,r'^Last energy frame read',split=None)
 									if endtime != -1: endtime = float(endtime.split('time')[-1])
-									if any([i == -1 for i in [starttime,endtime]]): break
-									stamp = '-'.join([
-										str((int(i) if round(i) == i else float(i))) for i in 
-										[starttime,endtime]])
-									simtree[top]['steps'][stepnum]['parts'][-1]['edrstamp'] = stamp
+									if not any([i == -1 for i in [starttime,endtime]]): 
+										stamp = '-'.join([
+											str((int(i) if round(i) == i else float(i))) 
+											for i in [starttime,endtime]])
+										simtree[top]['steps'][stepnum]['parts'][-1]['edrstamp'] = stamp
 						#---grab key files
 						for kf in key_files:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) if fn == kf]
