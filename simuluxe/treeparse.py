@@ -84,26 +84,42 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 							if spider:
 								#---gmxcheck
 								typecheck = 'edr'
-								command = ['gmxcheck',
-									{'trr':'-f','xtc':'-f','edr':'-e'}[typecheck],
-									simtree[top]['root']+'/'+top+'/'+simtree[top]['steps'][stepnum]['dir']+\
-									'/'+prefix+typecheck]
-								if type(command) == list: command = ' '.join(command)
-								p = subprocess.Popen(command,stdout=subprocess.PIPE,stdin=subprocess.PIPE,
-									stderr=subprocess.PIPE,shell=True)
-								catch = p.communicate(input=None)
-								#---only check edr files for time stamps because fast
-								if not re.search('WARNING: there may be something wrong with energy file',
-									'\n'.join(catch)):
-									starttime = perfectregex(catch,r'(index\s+0)',split=None)
-									if starttime != -1: starttime = float(starttime.split('t:')[-1])
-									endtime = perfectregex(catch,r'^Last energy frame read',split=None)
-									if endtime != -1: endtime = float(endtime.split('time')[-1])
-									if not any([i == -1 for i in [starttime,endtime]]): 
-										stamp = '-'.join([
-											str((int(i) if round(i) == i else float(i))) 
-											for i in [starttime,endtime]])
-										simtree[top]['steps'][stepnum]['parts'][-1]['edrstamp'] = stamp
+								if typecheck == 'edr':
+									command = ['gmxcheck',
+										{'trr':'-f','xtc':'-f','edr':'-e'}[typecheck],
+										simtree[top]['root']+'/'+top+'/'+\
+										simtree[top]['steps'][stepnum]['dir']+'/'+prefix+typecheck]
+									if type(command) == list: command = ' '.join(command)
+									p = subprocess.Popen(command,stdout=subprocess.PIPE,
+										stdin=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+									catch = p.communicate(input=None)
+									#---only check edr files for time stamps because fast
+									if not re.search(
+										'WARNING: there may be something wrong with energy file',
+										'\n'.join(catch)):
+										starttime = perfectregex(catch,r'(index\s+0)',split=None)
+										if starttime != -1: starttime = float(starttime.split('t:')[-1])
+										endtime = perfectregex(catch,r'^Last energy frame read',split=None)
+										if endtime != -1: endtime = float(endtime.split('time')[-1])
+										if not any([i == -1 for i in [starttime,endtime]]): 
+											stamp = '-'.join([
+												str((int(i) if round(i) == i else float(i))) 
+												for i in [starttime,endtime]])
+											simtree[top]['steps'][stepnum]['parts'][-1]['edrstamp'] = stamp
+								elif typecheck == 'trr' or typecheck == 'xtc':
+									#---legacy code but this feature is disabled
+									starttime = float(perfectregex(catch,
+										r'^Reading frame\s+0\s+time\s+[0-9]+\.[0-9]+',num=1,split=4))
+									nframes = int(perfectregex(catch,
+										r'^Step\s+[0-9]+\s+[0-9]+$',split=1))
+									timestep = int(perfectregex(catch,
+										r'^Coords\s+[0-9]+\s+[0-9]+$',split=2))
+									if any([i == -1 for i in [starttime,nframes,timestep]]): break
+									if typecheck+'stamp' not in step.keys(): step[typecheck+'stamp'] = []
+									step[typecheck+'stamp'].append('-'.join([
+										str((int(i) if round(i) == i else float(i))) for i in 
+										[starttime,starttime+nframes*timestep,timestep]]))
+
 						#---grab key files
 						for kf in key_files:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) if fn == kf]
@@ -116,70 +132,6 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
 							if valids != []: simtree[top]['steps'][stepnum]['trajs'] = list(valids)							
 							
-	#---spider option checks the timestamps on each trajectory file
-	#---disabled during rework
-	if spider and 0:
-	
-		#---define the filetypes which we will extract timestampts from
-		#---note temporarily set to only look at energy files
-		if timecheck_types == None: timecheck_types = ['trr','xtc','edr'][-1:]
-
-		#---prepare a list of trajectory files for counting
-		alltrajs = sum(sum([[[j[typ] for j in simtree[i]['steps'] 
-			if typ in j.keys()] for i in simtree] 
-			for typ in timecheck_types],[]),[])
-		ntrajs = len(alltrajs)
-		trajcount = 0
-
-		#---loop over all trajectories and energy files to record timestamps
-		st = time.time()
-		for top in simtree.keys():
-			for step in simtree[top]['steps']:
-				for typecheck in timecheck_types:
-					if typecheck in step.keys():
-						for partnum in step[typecheck]:
-							status('processing timestamps '+str(trajcount+1)+'/'+str(ntrajs)+' ... ',
-								start=st,i=trajcount,looplen=ntrajs)
-							command = ['gmxcheck',
-								{'trr':'-f','xtc':'-f','edr':'-e'}[typecheck],
-								simtree[top]['root']+'/'+top+'/'+step['dir']+'/'+partnum]
-							if type(command) == list: command = ' '.join(command)
-							p = subprocess.Popen(command,stdout=subprocess.PIPE,stdin=subprocess.PIPE,
-								stderr=subprocess.PIPE,shell=True)
-							catch = p.communicate(input=None)
-							#---use regex to extract start time, frames, and timestep
-							#---note that the downstream naming convention may not allow picosecond fractions
-							#---note that this requires consistent timesteps
-							if typecheck == 'trr' or typecheck == 'xtc':
-								starttime = float(perfectregex(catch,
-									r'^Reading frame\s+0\s+time\s+[0-9]+\.[0-9]+',num=1,split=4))
-								nframes = int(perfectregex(catch,
-									r'^Step\s+[0-9]+\s+[0-9]+$',split=1))
-								timestep = int(perfectregex(catch,
-									r'^Coords\s+[0-9]+\s+[0-9]+$',split=2))
-								if any([i == -1 for i in [starttime,nframes,timestep]]): break
-								if typecheck+'stamp' not in step.keys(): step[typecheck+'stamp'] = []
-								step[typecheck+'stamp'].append('-'.join([
-									str((int(i) if round(i) == i else float(i))) for i in 
-									[starttime,starttime+nframes*timestep,timestep]]))
-							elif typecheck == 'edr':
-								#---note that some energy files have errors so we add dummy stamps to preserve order
-								if re.search('WARNING: there may be something wrong with energy file',
-									'\n'.join(catch)):
-									step[typecheck+'stamp'].append('')
-								else:
-									starttime = perfectregex(catch,r'(index\s+0)',split=None)
-									if starttime != -1: starttime = float(starttime.split('t:')[-1])
-									endtime = perfectregex(catch,r'^Last energy frame read',split=None)
-									if endtime != -1: endtime = float(endtime.split('time')[-1])
-									if any([i == -1 for i in [starttime,endtime]]): break
-									if typecheck+'stamp' not in step.keys(): step[typecheck+'stamp'] = []
-									step[typecheck+'stamp'].append('-'.join([
-										str((int(i) if round(i) == i else float(i))) for i in 
-										[starttime,endtime]]))
-							else: raise Exception('except: unclear type for time check')
-						trajcount += 1
-	
 	#---send dictionary back to controller to write to file
 	return simtree
 	
@@ -242,21 +194,25 @@ def make_timeslice(simname,stepname,timeseg,form):
 	Make a time slice.\n
 	By default it writes the slice to the earliest step directory that holds the trajectory.
 	'''
-
 	#---unpack the time segment
 	start,end,timestep = [int(i) for i in timeseg.split('-')]
 	#---find the correct files
 	tl = []
-	stepnum = [j['dir'] for j in simdict[simname]['steps']].index(stepname)
-	step = simdict[simname]['steps'][stepnum]
-	for si,stamp in enumerate(step['edrstamp']):
-		seg = [step['dir']]+[step[form][si]]+[float(i) for i in stamp.split('-')]
-		if (start <= seg[3] and start >= seg[2]) or (end <= seg[3] and end >= seg[2]): tl.append(seg)
+	stepnums = [j['dir'] for j in simdict[simname]['steps']].index(stepname)
+	for stepnum in range(stepnums,len(simdict[simname]['steps'])):
+		step = simdict[simname]['steps'][stepnum]
+		if 'parts' in step.keys():
+			for part in step['parts']:
+				if form in part.keys() and 'edrstamp' in part.keys():
+					seg = [step['dir']]+[part[form]]+[float(i) 
+						for i in part['edrstamp'].split('-')]
+					if (start <= seg[3] and start >= seg[2]) or (end <= seg[3] and end >= seg[2]):	
+						tl.append(seg)
 	#---check if the time span is big enough
 	if not any([j[2] <= start for j in tl]): raise Exception('except: time segment runs too early')
 	if not any([j[3] >= end for j in tl]): raise Exception('except: time segment runs too late')
-	#---check continuity
-	if not all([tl[i][3]==tl[i+1][2] for i in range(len(tl)-1)]): 
+	#---check continuity, disabled because edr files are sampled more frequently
+	if not all([tl[i][3]==tl[i+1][2] for i in range(len(tl)-1)]) and 0: 
 		print 'timeline = '+str(tl)
 		raise Exception('except: timeline must be seamless')
 	#---note that we would normally include a check to make sure that frames are not repeated
