@@ -204,6 +204,7 @@ def avail(simname,slices=False):
 	List available time slices for a simulation according to its root name.
 	'''
 	
+	ut0 = re.compile(r'(\d)0+$')
 	if type(simname) != list: simname = [simname]
 	if simname == []: simname = simdict.keys()
 	if slices:
@@ -222,7 +223,9 @@ def avail(simname,slices=False):
 					if 'edrstamp' in part and 'trr' in part:
 						ts = part['edrstamp'].split('-')
 						print sn.ljust(40,'.')+step['dir'].ljust(30,'.')+part['edr'].ljust(20,'.')+\
-							ts[0].rjust(20,'.')+ts[1].rjust(20,'.')
+							ut0.sub(r'\1', "%12f" % float(ts[0])).ljust(20,'.')+' '+\
+							ut0.sub(r'\1', "%12f" % float(ts[1])).ljust(20)
+							#ts[0].rjust(20,'.')+ts[1].rjust(20,'.')
 					
 def timeslice(arglist):
 	
@@ -242,7 +245,8 @@ def timeslice(arglist):
 	if len(stepname) != 1: raise Exception('except: unclear stepname')
 	else: stepname = stepname[0]
 	#---get the duration and timestep
-	timeseg = [i for i in arglist if len(i.split('-')) == 3]
+	timeseg = [i for i in arglist if len(i.split('-')) == 3 
+		if all([re.match('^[0-9]+$',j) for j in i.split('-')])]
 	if len(timeseg) != 1: raise Exception('except: unclear time slice')
 	else: timeseg = timeseg[0]	
 	make_timeslice(simname,stepname,timeseg,('xtc' if xtc else 'trr'))

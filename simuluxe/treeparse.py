@@ -206,8 +206,12 @@ def make_timeslice(simname,stepname,timeseg,form):
 				if form in part.keys() and 'edrstamp' in part.keys():
 					seg = [step['dir']]+[part[form]]+[float(i) 
 						for i in part['edrstamp'].split('-')]
-					if (start <= seg[3] and start >= seg[2]) or (end <= seg[3] and end >= seg[2]):	
+					print seg
+					if (start <= seg[3] and start >= seg[2]) or (end <= seg[3] and end >= seg[2]) or \
+						(start <= seg[2] and end >= seg[3]):	
 						tl.append(seg)
+	print 'stop'
+	raw_input('wait')
 	#---check if the time span is big enough
 	if not any([j[2] <= start for j in tl]): raise Exception('except: time segment runs too early')
 	if not any([j[3] >= end for j in tl]): raise Exception('except: time segment runs too late')
