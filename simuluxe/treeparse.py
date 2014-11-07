@@ -48,6 +48,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 					simtree[top]['steps'] = [{'dir':step} for step in steplist]
 					#---loop over subdirectories
 					for stepnum,sd in enumerate(steplist):
+						'''
 						#---grab selected file types that match a regex for files on the simulation timeline
 						for suf in valid_suffixes:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
@@ -66,9 +67,60 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 							#---sort by part number
 							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
 							if valids != []: simtree[top]['steps'][stepnum]['trajs'] = list(valids)							
+						'''
+						#---find all possible part numbers
+						filenames = os.listdir(dp+'/'+top+'/'+sd)
+						partfiles = [fn for fn in filenames if re.search(r'^md\.part[0-9]{4}\.',fn)]
+						parts = list(set([int(i[7:11]) for i in partfiles]))
+						parts = [parts[j] for j in argsort(parts)]
+						if len(parts) > 0: simtree[top]['steps'][stepnum]['parts'] = []
+						#---for each part number check for available files
+						for pn in parts:
+							newpart = dict()
+							prefix = 'md.part'+'{:04d}'.format(pn)+'.'
+							for suf in ['xtc','trr','edr']:
+								if prefix+suf in filenames: newpart[suf] = prefix+suf
+							simtree[top]['steps'][stepnum]['parts'].append(newpart)
+							if spider:
+								#---gmxcheck
+								typecheck = 'edr'
+								command = ['gmxcheck',
+									{'trr':'-f','xtc':'-f','edr':'-e'}[typecheck],
+									simtree[top]['root']+'/'+top+'/'+simtree[top]['steps'][stepnum]['dir']+\
+									'/'+prefix+typecheck]
+								if type(command) == list: command = ' '.join(command)
+								p = subprocess.Popen(command,stdout=subprocess.PIPE,stdin=subprocess.PIPE,
+									stderr=subprocess.PIPE,shell=True)
+								catch = p.communicate(input=None)
+								#---only check edr files for time stamps because fast
+								if re.search('WARNING: there may be something wrong with energy file',
+									'\n'.join(catch)):
+									step[typecheck+'stamp'].append('')
+								else:
+									starttime = perfectregex(catch,r'(index\s+0)',split=None)
+									if starttime != -1: starttime = float(starttime.split('t:')[-1])
+									endtime = perfectregex(catch,r'^Last energy frame read',split=None)
+									if endtime != -1: endtime = float(endtime.split('time')[-1])
+									if any([i == -1 for i in [starttime,endtime]]): break
+									stamp = '-'.join([
+										str((int(i) if round(i) == i else float(i))) for i in 
+										[starttime,endtime]])
+									simtree[top]['steps'][stepnum]['parts'][-1]['edrstamp'] = stamp
+						#---grab key files
+						for kf in key_files:
+							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) if fn == kf]
+							if valids != []: simtree[top]['steps'][stepnum]['key_files'] = list(valids)
+						#---grab concatenated trajectory files
+						for suf in traj_suf:
+							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
+								if re.search(r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+\.'+suf+'$',fn)]
+							#---sort by part number
+							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
+							if valids != []: simtree[top]['steps'][stepnum]['trajs'] = list(valids)							
 							
 	#---spider option checks the timestamps on each trajectory file
-	if spider:
+	#---disabled during rework
+	if spider and 0:
 	
 		#---define the filetypes which we will extract timestampts from
 		#---note temporarily set to only look at energy files
