@@ -204,7 +204,6 @@ def avail(simname,slices=False):
 	List available time slices for a simulation according to its root name.
 	'''
 	
-	ut0 = re.compile(r'(\d)0+$')
 	if type(simname) != list: simname = [simname]
 	if simname == []: simname = simdict.keys()
 	if slices:
@@ -223,9 +222,8 @@ def avail(simname,slices=False):
 					if 'edrstamp' in part and 'trr' in part:
 						ts = part['edrstamp'].split('-')
 						print sn.ljust(40,'.')+step['dir'].ljust(30,'.')+part['edr'].ljust(20,'.')+\
-							ut0.sub(r'\1', "%12f" % float(ts[0])).ljust(20,'.')+' '+\
-							ut0.sub(r'\1', "%12f" % float(ts[1])).ljust(20)
-							#ts[0].rjust(20,'.')+ts[1].rjust(20,'.')
+							re.compile(r'(\d)0+$').sub(r'\1', "%12f" % float(ts[0])).ljust(20,'.')+' '+\
+							re.compile(r'(\d)0+$').sub(r'\1', "%12f" % float(ts[1])).ljust(20)
 					
 def timeslice(arglist):
 	
