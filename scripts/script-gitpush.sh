@@ -16,7 +16,9 @@ then
 	#git add . --all
   	#git commit -a -m \""$timestamp" : "${@:2}"\"
     #git push
+    echo
     echo $commit_message
+    echo 
 fi
 echo
 
