@@ -8,9 +8,9 @@ import json
 
 #---imports
 import simuluxe
-from simuluxe.codetools import *
+from simuluxe.codetools import niceblock,confirm
 
-helpstring = """
+helpstring = """u
 	
 	SIMULUXE simulation analysis tools
 	
@@ -71,9 +71,6 @@ initconfig = """#!/usr/bin/python
 	#---additional settings files to load
 	setfiles = []
 	
-	#---blank dictionary for adding simulation descriptions
-	simdict = {}
-	
 	#---location of the simuluxe execute scripts
 	"""
 
@@ -106,10 +103,11 @@ def init_local_config():
 			fp.write('\n#---customize below\n')
 		#---push these variables to globals for consistency with downstream programs that might check
 		#---note that this may be deprecated
-		globals()['slwd'] = slwd
-		globals()['datapaths'] = []
-		globals()['setfiles'] = []
-		globals()['simdict'] = {}
+		if 0:
+			globals()['slwd'] = slwd
+			globals()['datapaths'] = []
+			globals()['setfiles'] = []
+			globals()['simdict'] = {}
 		return True
 	else: return False
 
@@ -168,11 +166,14 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 	spider = True if any([xtctime,trrtime,edrtime]) else False
 	infofile = os.path.abspath(os.path.expanduser(infofile))
 	if os.path.isfile(infofile):
-		print 'file exists but I will overwrite'
+		print 'simdict file exists at '+infofile+' but I will overwrite'
 		if not confirm(): return
 	simdict = simuluxe.findsims(spider=spider)
 	with open(infofile,'w') as fp:
-		fp.write('#!/usr/bin/env python\n\n')
+		#---note that we must define simdict here
+		#---...simuluxe will execute the files in datapaths to create simuluxe.simdict
+		#---...execution of .simuluxe_config.py only loads paths while importing simuluxe gets data
+		fp.write('#!/usr/bin/env python\n\nsimdict = {}\n')
 		for key in simdict.keys():
 			fp.write("simdict['"+key+"'] = \\\n")
 			formstring = json.dumps(simdict[key],indent=4)
@@ -180,7 +181,7 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 				fp.write('    '+line+'\n')
 			fp.write('\n')
 	if new or infofile not in simuluxe.setfiles: addconfig(infofile)
-	
+	reload(simuluxe)
 
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
@@ -268,10 +269,5 @@ def makeface(arglist):
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
-if __name__ == "__main__": 
-	datapaths = simuluxe.datapaths
-	simdict = simuluxe.simdict
-	setfiles = simuluxe.setfiles
-	slwd = simuluxe.slwd
-	makeface(sys.argv[1:])
+if __name__ == "__main__": makeface(sys.argv[1:])
 	

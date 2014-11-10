@@ -6,10 +6,18 @@ Development only.
 '''
 
 #---imports
-from os.path import expanduser
-execfile(expanduser('~/.simuluxe_config.py'))
-import simuluxe
-import controller
+import os,sys
+execfile(os.path.expanduser('~/.simuluxe_config.py'))
+import simuluxe,controller
+
+#---imports
+from simuluxe.io import trajectory_read
+import matplotlib as mpl
+import scipy
+from scipy import linalg
+from scipy import spatial
+import pylab as plt
+from numpy import fft
 
 #---TESTS
 #-------------------------------------------------------------------------------------------------------------
@@ -37,24 +45,10 @@ Deploy the system to ~/worker/simuluxe for code, ~/worker/simuluxe-work for deve
 	and ~/worker/simuluxe-data/simdict.py for storing the simdict using the following:
 
 rm ~/.simuluxe.config; make addpath ~/compbio; make catalog ~/simuluxe-data/simdict.py
+rm ~/.simuluxe.config; make addpath ~/compbio;
+
+If you skip making the catalog, you can run the following to do so, only if you have the 
+	standard import given above.
+	
+controller.catalog(infofile='~/worker/simuluxe-data/simdict.py',edrtime=True)
 '''
-
-#---reset the system
-#---alternately "make catalog ~/worker/simuluxe-data/simdict.py"
-#---note that this is deprecated
-if 0:
-
-	#---bootstrap imports for testing
-	import os,sys
-	confpath = os.path.expanduser('~/.simuluxe_config.py')
-	if os.path.isfile(confpath): execfile(os.path.expanduser('~/.simuluxe_config.py'))
-	else:
-		print 'no simuluxe config file so assuming location is ~/worker/simuluxe'
-		sys.path.append(os.path.expanduser('~/worker/simuluxe'))
-		import controller
-
-	#---reset
-	if os.path.isfile(confpath): os.remove(confpath)
-	controller.addpath('~/compbio')
-	controller.catalog(infofile='~/worker/simuluxe-data/simdict.py',edrtime=True)
-

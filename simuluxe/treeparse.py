@@ -4,7 +4,7 @@
 from os.path import expanduser
 try: execfile(expanduser('~/.simuluxe_config.py'))
 except: print 'config file is absent'
-from simuluxe import *
+import simuluxe
 
 #---imports 
 import re,subprocess
@@ -61,7 +61,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	simtree = dict()
 
 	#---defaults to specify valid simulation folder prefixes of the form "name-vNUM"
-	if top_prefixes == None: top_prefixes = ['membrane','mesomembrane'][:1]
+	if top_prefixes == None: top_prefixes = ['membrane','protein','mesomembrane'][:2]
 	if valid_suffixes == None: valid_suffixes = ['trr','xtc','tpr','edr']
 	if key_files == None: key_files = ['system.gro','system-input.gro']
 	traj_suf = ['trr','xtc']
@@ -109,9 +109,9 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 									if not re.search(
 										'WARNING: there may be something wrong with energy file',
 										'\n'.join(catch)):
-										starttime = perfectregex(catch,r'(index\s+0)',split=None)
+										starttime = simuluxe.regcheck(catch,r'(index\s+0)',split=None)
 										if starttime != -1: starttime = float(starttime.split('t:')[-1])
-										endtime = perfectregex(catch,r'^Last energy frame read',split=None)
+										endtime = simuluxe.regcheck(catch,r'^Last energy frame read',split=None)
 										if endtime != -1: endtime = float(endtime.split('time')[-1])
 										if not any([i == -1 for i in [starttime,endtime]]): 
 											stamp = '-'.join([
@@ -120,11 +120,11 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 											simtree[top]['steps'][stepnum]['parts'][-1]['edrstamp'] = stamp
 								elif typecheck == 'trr' or typecheck == 'xtc':
 									#---legacy code but this feature is disabled
-									starttime = float(perfectregex(catch,
+									starttime = float(simuluxe.regcheck(catch,
 										r'^Reading frame\s+0\s+time\s+[0-9]+\.[0-9]+',num=1,split=4))
-									nframes = int(perfectregex(catch,
+									nframes = int(simuluxe.regcheck(catch,
 										r'^Step\s+[0-9]+\s+[0-9]+$',split=1))
-									timestep = int(perfectregex(catch,
+									timestep = int(simuluxe.regcheck(catch,
 										r'^Coords\s+[0-9]+\s+[0-9]+$',split=2))
 									if any([i == -1 for i in [starttime,nframes,timestep]]): break
 									if typecheck+'stamp' not in step.keys(): step[typecheck+'stamp'] = []
@@ -155,15 +155,15 @@ def latest_simdat(simname,traj,tpr):
 	
 	#---find latest files
 	calcfiles = {'trr':None,'tpr':None,'gro':None}
-	for si,step in reversed(list(enumerate(simdict[simname]['steps']))):
+	for si,step in reversed(list(enumerate(simuluxe.simdict[simname]['steps']))):
 		if calcfiles['trr'] == None and 'trr' in step.keys() and step['trr'] != []: 
-			calcfiles['trr'] = simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+step['trr'][0]
+			calcfiles['trr'] = simuluxe.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+step['trr'][0]
 		if calcfiles['tpr'] == None and 'tpr' in step.keys() and step['tpr'] != []: 
-			calcfiles['tpr'] = simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+step['tpr'][0]
+			calcfiles['tpr'] = simuluxe.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+step['tpr'][0]
 		for groname in ['system-input.gro','system.gro']:
 			if calcfiles['gro'] == None and 'key_files' in step.keys() \
 				and groname in step['key_files']:
-				calcfiles['gro'] = simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+groname
+				calcfiles['gro'] = simuluxe.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+groname
 	return calcfiles
 	
 def avail(simname=None,slices=False,display=True):
@@ -173,24 +173,24 @@ def avail(simname=None,slices=False,display=True):
 	'''
 	
 	#---argument handling
-	if simname == None: simname = simdict.keys()
+	if simname == None: simname = simuluxe.simdict.keys()
 	elif type(simname) == str: simname = [simname]
 
 	#---result dictionary
 	listing = []
-
+	
 	if slices:
 		#---specifically list the prepared slices
 		for sn in simname:
-			if 'steps' in simdict[sn].keys():
-				for step in simdict[sn]['steps']:
+			if 'steps' in simuluxe.simdict[sn].keys():
+				for step in simuluxe.simdict[sn]['steps']:
 					if 'trajs' in step.keys():
 						for traj in step['trajs']:
 							if display: print sn.ljust(30,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
 	else:
 		#---list slices according to time slices
 		for sn in simname:
-			for step in [s for s in simdict[sn]['steps'] if 'parts' in s.keys()]:
+			for step in [s for s in simuluxe.simdict[sn]['steps'] if 'parts' in s.keys()]:
 				for part in step['parts']:
 					if 'edrstamp' in part and 'trr' in part:
 						ts = part['edrstamp'].split('-')
@@ -224,9 +224,9 @@ def timeslice(simname,step,time,form):
 
 	#---generate timeline from relevant files
 	tl = []
-	stepnums = [j['dir'] for j in simdict[simname]['steps']].index(step)
-	for stepnum in range(stepnums,len(simdict[simname]['steps'])):
-		stepdict = simdict[simname]['steps'][stepnum]
+	stepnums = [j['dir'] for j in simuluxe.simdict[simname]['steps']].index(step)
+	for stepnum in range(stepnums,len(simuluxe.simdict[simname]['steps'])):
+		stepdict = simuluxe.simdict[simname]['steps'][stepnum]
 		if 'parts' in stepdict.keys():
 			for part in stepdict['parts']:
 				if form in part.keys() and 'edrstamp' in part.keys():
@@ -253,11 +253,11 @@ def timeslice(simname,step,time,form):
 	print 'time slices = '+str(tl)
 	#---write everything to the first step folder by default
 	#---note make the location an option
-	cwd = simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
+	cwd = simuluxe.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
 	#---make individual slices
 	for stepdir,partfile,start,end,timestep in tl:
 		cmd = ' '.join(['trjconv',
-			'-f '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
+			'-f '+simuluxe.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 			'-o '+partfile.strip('.'+form)+'_slice.'+form,
 			'-b '+str(start),
 			'-e '+str(end),
@@ -269,7 +269,7 @@ def timeslice(simname,step,time,form):
 		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+'.'+form
 	cmd = ' '.join(['trjcat',
 		'-f '+' '.join(slicefiles),
-		'-o '+simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname])
+		'-o '+simuluxe.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname])
 	call(cmd,logfile='log-timeslice-trjcat-'+\
 		'-'.join([str(i) for i in [start,end,timestep]])+'.log',cwd=cwd)
 	for s in slicefiles: 

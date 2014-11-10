@@ -22,7 +22,7 @@ try:
 except: print 'matplotlib/pylab not found'
 
 #---import all submodules
+#---note it may be necessary to import explicitly
 from codetools import *
 from treeparse import *
 from io import *
-

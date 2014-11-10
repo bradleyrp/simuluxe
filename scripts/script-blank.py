@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 #---imports
-from os.path import expanduser
-execfile(expanduser('~/.simuluxe_config.py'))
-from simuluxe import *
-
+import os,sys
+execfile(os.path.expanduser('~/.simuluxe_config.py'))
+import simuluxe,controller

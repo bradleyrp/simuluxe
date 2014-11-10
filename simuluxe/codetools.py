@@ -61,7 +61,7 @@ def confirm():
 	sure = True if raw_input("%s (y/N) " % 'confirmed?').lower() == 'y' else False
 	if go and sure: return True
 	
-def perfectregex(chopped,regex,split=None,num=1):
+def regcheck(chopped,regex,split=None,num=1):
 	'''
 	Searches a newline-split file in a list for a regex and makes sure there is only one match.
 	'''
