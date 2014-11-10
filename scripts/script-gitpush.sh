@@ -12,9 +12,11 @@ read -p "confirmed? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-	git add . --all
-  	git commit -a -m \""$timestamp" : "${@:2}"\"
-    git push
+	commit_message=$(echo $timestamp" : "${@:2})
+	#git add . --all
+  	#git commit -a -m \""$timestamp" : "${@:2}"\"
+    #git push
+    echo $commit_message
 fi
 echo
 
