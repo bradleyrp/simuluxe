@@ -166,8 +166,6 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 	new = init_local_config()
 	#---note that checking time slices is only done via edr and the xtc/trr files are not consulted
 	spider = True if any([xtctime,trrtime,edrtime]) else False
-	print infofile
-	raw_input('debug')
 	infofile = os.path.abspath(os.path.expanduser(infofile))
 	if os.path.isfile(infofile):
 		print 'file exists but I will overwrite'
