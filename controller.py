@@ -1,9 +1,14 @@
 #!/usr/bin/python
 
+#---imports
 import sys,os
 import time
 import copy
-from simuluxe import *
+import json
+
+#---imports
+import simuluxe
+from simuluxe.codetools import *
 
 helpstring = """
 	
@@ -100,6 +105,7 @@ def init_local_config():
 			fp.write("sys.path.append(slwd)\n")
 			fp.write('\n#---customize below\n')
 		#---push these variables to globals for consistency with downstream programs that might check
+		#---note that this may be deprecated
 		globals()['slwd'] = slwd
 		globals()['datapaths'] = []
 		globals()['setfiles'] = []
@@ -107,56 +113,34 @@ def init_local_config():
 		return True
 	else: return False
 
-def addpath(pathdir):
+def addpath(datapath=None):
 
 	'''
 	Add extra paths to simulation data to the local configuration.
 	'''
 
 	new = init_local_config()
-	if type(pathdir) != list: pathdir = [pathdir]
-	for n in pathdir:
+	if type(datapath) != list: datapath = [datapath]
+	for n in datapath:
 		fullpath = os.path.abspath(os.path.expanduser(n))
 		if ((not new and fullpath not in datapaths) or new) and os.path.isdir(fullpath):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("datapaths.append('"+fullpath+"')\n")
 
-def addconfig(pathfile):
+def addconfig(setfile=None):
 
 	'''
 	Add extra configuration and settings files to the local configuration.
 	'''
 	
 	new = init_local_config()
-	if type(pathfile) != list: pathfile = [pathfile]
-	for n in pathfile:
+	if type(setfile) != list: setfile = [setfile]
+	for n in setfile:
 		fullpath = os.path.abspath(os.path.expanduser(n))
-		if ((not new and fullpath not in setfiles) or new) and os.path.isfile(fullpath):
+		if ((not new and fullpath not in simuluxe.setfiles) or new) and os.path.isfile(fullpath):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			
-def gitpush(comment):
-	
-	'''
-	Push the repository to github. Development purposes only.
-	'''
-	
-	os.system('./controller make_docs clean')
-	print time.time()
-	print comment
-	time.strftime("%Y.%m.%d.%H%M",time.localtime())
-	print "\n---pushing to github---\n"
-	message = '"'+time.strftime("%Y.%m.%d.%H%M",time.localtime())+\
-		' : '+(' '.join(comment)).strip(' ')+'"'
-	print message
-	print '\ndirectory size:' 
-	os.system('du -h --max-depth=0')
-	if confirm():
-		print '\npushing'
-		os.system('git add . --all')
-		os.system('git commit -a -m '+str(message))
-		os.system('git push')
-		
 def report():
 	
 	'''
@@ -166,13 +150,13 @@ def report():
 	init_local_config()
 	print '\nSTATUS:'
 	print '\nsimdict : holds metadata for your simulations'
-	print 'simdict = '+str(simdict)
+	print 'simdict = '+str(simuluxe.simdict)
 	print '\ndatapath : provides a parent directory where simulations can be found'
-	print 'datapaths = '+str(datapaths)
+	print 'datapaths = '+str(simuluxe.datapaths)
 	print '\nsetfiles : points to additional configuration files which may add to datapath and simdict'
-	print 'setfiles = '+str(setfiles)
-	
-def catalog(arglist):
+	print 'setfiles = '+str(simuluxe.setfiles)
+
+def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 
 	'''
 	Parse simulation data directories, load paths into a new configuration file, and check that it's in
@@ -180,14 +164,15 @@ def catalog(arglist):
 	'''
 	
 	new = init_local_config()
-	#---note that a target python settings file must always be the first argument
-	if type(arglist) == list: infofile = arglist[0]
-	spider = True if any([i in arglist for i in ['edrtime','trrtime','xtctime']]) else False
+	#---note that checking time slices is only done via edr and the xtc/trr files are not consulted
+	spider = True if any([xtctime,trrtime,edrtime]) else False
+	print infofile
+	raw_input('debug')
 	infofile = os.path.abspath(os.path.expanduser(infofile))
 	if os.path.isfile(infofile):
 		print 'file exists but I will overwrite'
 		if not confirm(): return
-	simdict = findsims(spider=spider)
+	simdict = simuluxe.findsims(spider=spider)
 	with open(infofile,'w') as fp:
 		fp.write('#!/usr/bin/env python\n\n')
 		for key in simdict.keys():
@@ -196,96 +181,99 @@ def catalog(arglist):
 			for line in formstring.split('\n'):
 				fp.write('    '+line+'\n')
 			fp.write('\n')
-	if new or infofile not in setfiles: addconfig(infofile)
+	if new or infofile not in simuluxe.setfiles: addconfig(infofile)
 	
-def avail(simname,slices=False):
-	
-	'''
-	List available time slices for a simulation according to its root name.
-	'''
-	
-	if type(simname) != list: simname = [simname]
-	if simname == []: simname = simdict.keys()
-	if slices:
-		#---specifically list the prepared slices
-		for sn in simname:
-			if 'steps' in simdict[sn].keys():
-				for step in simdict[sn]['steps']:
-					if 'trajs' in step.keys():
-						for traj in step['trajs']:
-							print sn.ljust(30,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
-	else:
-		#---list slices according to time slices
-		for sn in simname:
-			for step in [s for s in simdict[sn]['steps'] if 'parts' in s.keys()]:
-				for part in step['parts']:
-					if 'edrstamp' in part and 'trr' in part:
-						ts = part['edrstamp'].split('-')
-						print sn.ljust(40,'.')+step['dir'].ljust(30,'.')+part['edr'].ljust(20,'.')+\
-							re.compile(r'(\d)0+$').sub(r'\1', "%12f" % float(ts[0])).ljust(20,'.')+' '+\
-							re.compile(r'(\d)0+$').sub(r'\1', "%12f" % float(ts[1])).ljust(20)
-					
-def timeslice(arglist):
-	
-	'''
-	Make a timeslice of a simulation.
-	'''
-	
-	xtc = True if 'xtc' in arglist else False
-	trr = True if 'trr' in arglist else False
-	if xtc and trr: raise Exception('except: multiple slice trajectory formats')
-	#---get the simulation name
-	simname = [i for i in arglist if i in simdict.keys()]
-	if len(simname) != 1: raise Exception('except: unclear simulation name')
-	else: simname = simname[0]
-	#---get the step name
-	stepname = [i for i in arglist if i in [j['dir'] for j in simdict[simname]['steps']]]
-	if len(stepname) != 1: raise Exception('except: unclear stepname')
-	else: stepname = stepname[0]
-	#---get the duration and timestep
-	timeseg = [i for i in arglist if len(i.split('-')) == 3 
-		if all([re.match('^[0-9]+$',j) for j in i.split('-')])]
-	if len(timeseg) != 1: raise Exception('except: unclear time slice')
-	else: timeseg = timeseg[0]	
-	make_timeslice(simname,stepname,timeseg,('xtc' if xtc else 'trr'))
-	
-def arguer(arglist):
 
+#---INTERFACE
+#-------------------------------------------------------------------------------------------------------------
+
+'''
+Functions exposed to makefile:
+def avail
+def timeslice
+def catalog
+'''
+
+def makeface(arglist):
 	'''
-	Custom argument parser for cooperation with makefile-python interface.
+	Interface to makefile.
 	'''
 
+	#---print help if no arguments
+	if arglist == []:
+		print niceblock(helpstring,newlines=True)
+		return
+	
+	#---we prepare a kwargs and an args variable to send to the next function
+	#---note that we generally just use kwargs exclusively for clarity
+	kwargs = dict()
+	
+	#---always get the function name from the first argument
+	func = arglist.pop(0)
+	
 	#---define the arguments expected for each function
 	argdict = {
-	'avail':['simname','slices'],
+		'avail':{'args':['simname','slices'],'module_name':'treeparse'},
+		'timeslice':{'args':['simname','step','timerange','form'],'module_name':'treeparse'},
+		'catalog':{'args':['infofile','xtctime','edrtime','trrtime'],'module_name':None},
+		'addpath':{'args':['datapath'],'module_name':None},
+		'addconfig':{'args':['setfile'],'module_name':None},
 		}
-	#---return kwargs
-	kwargs = dict()
-	#---only ordering here is the requirement that the first word is the python function
-	func = arglist[0]
-	if arglist[0] in argdict.keys():
-		#---copy the dictionary for this function so we can iteratively handle each item
-		argd = copy.deepcopy(argdict[func])
-		#---special keywords are handled below
-		if 'simname' in argd:
-			simnames = [a for a in arglist[1:] if any([re.match(kn,a) 
-				for kn in ['membrane','protein']])]
-			argd.pop(argd.index('simname'))
-			kwargs['simname'] = simnames
-		#---all remaining keywords are handled as flags
-		for a in argd:
-			kwargs[a] = True if a in arglist[1:] else False
-		return kwargs
-	#---if no custom argument handling then return none
-	else: return None
+	
+	#---make a copy of the dictionary for pruning
+	if func not in argdict.keys():
+		globals()[func]
+		return
+	else: argd = copy.deepcopy(argdict[func])
+	
+	#---special keywords are handled below
+	if 'simname' in argd['args']:
+		simnames = [a for a in arglist if any([re.match(kn,a) for kn in ['membrane','protein']])]
+		for s in simnames: arglist.pop(arglist.index(s))
+		argd['args'].remove('simname')
+		kwargs['simname'] = simnames
+	if 'step' in argd['args']:
+		kwargs['step'] = [[i['dir'] for i in simuluxe.simdict[sn]['steps'] if i['dir'] in arglist]
+			for sn in simnames]
+		for s in [j for i in kwargs['step'] for j in i]: 
+				if s in arglist: arglist.remove(s)
+	if 'timerange' in argd['args']:
+		timerange = [i for i in arglist if len(i.split('-'))==3]
+		if len(timerange) != 1: raise Exception('except: unclear time range')
+		argd['args'].remove('timerange')
+		for i in timerange: arglist.remove(i)
+		kwargs['time'] = timerange[0]
+	if 'form' in argd['args']:
+		if 'xtc' in arglist and 'trr' in arglist: raise Exceptiopn('except: conflicting formats')
+		elif 'trr' in arglist: kwargs['form'] = 'trr'
+		else: kwargs['form'] = 'xtc'
+	if 'infofile' in argd['args']:
+		kwargs['infofile'] = arglist[0]
+		argd['args'].remove('infofile')
+		arglist.pop(0)
+	for sig in ['datapath','setfile']:
+		if sig in argd['args']:
+			kwargs[sig] = arglist
+			argd['args'].remove(sig)
+			arglist = []
+		
+	#---all remaining keywords are handled as flags
+	for a in arglist: kwargs[a] = True if a in argd['args'] else False
+	if arglist != []: raise Exception('except: unprocessed arguments')
+
+	#---call the function
+	if argd['module_name'] == None: target = globals()[func]
+	else: target = getattr(getattr(simuluxe,argd['module_name']),func)
+	target(**kwargs)
+	return	
 
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__": 
-	if len(sys.argv) < 2: print niceblock(helpstring,newlines=True)
-	else: 
-		argmods = arguer(sys.argv[1:])
-		if argmods != None: globals()[sys.argv[1]](**argmods)
-		else: globals()[sys.argv[1]](sys.argv[2:])
-
+	datapaths = simuluxe.datapaths
+	simdict = simuluxe.simdict
+	setfiles = simuluxe.setfiles
+	slwd = simuluxe.slwd
+	makeface(sys.argv[1:])
+	

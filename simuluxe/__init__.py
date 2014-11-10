@@ -3,9 +3,6 @@
 #---imports
 import os,sys
 
-#---json to format dictionary files
-import json
-
 #---conditional simuluxe imports
 import os
 if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):

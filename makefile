@@ -1,21 +1,28 @@
 
 #---valid function names from the python script
 TARGETS := $(shell perl -n -e '@parts = /^def\s+[a-z,_]+/g; $$\ = "\n"; print for @parts;' \
-	controller | awk '{print $$2}')
+	controller.py | awk '{print $$2}')
 
 #---collect arguments
 RUN_ARGS := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(RUN_ARGS):;@:)
 
 #---hack to always run makefile interfaced with python
-scripts=controller
+scripts=controller.py
 $(shell touch $(scripts))
 checkfile=.pipeline_up_to_date
 
 #---targets
 $(checkfile): $(scripts)
 	touch $(checkfile)
-	./controller ${RUN_ARGS}
+	python controller.py ${RUN_ARGS}
 
+#---default and arbitrary make targets
 default: $(checkfile)
 $(TARGETS): $(checkfile)
+
+#---git push
+gitpush:
+	bash scripts/script-gitpush.sh ${RUN_ARGS}
+
+
