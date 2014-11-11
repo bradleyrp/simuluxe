@@ -261,7 +261,7 @@ def makeface(arglist):
 	for a in arglist: kwargs[a] = True if a in argd['args'] else False
 	if arglist != []: raise Exception('except: unprocessed arguments')
 
-	if argd['module_name'] == None: target = globals()[func]
+	if argd['module_name'] == None and func != 'gitpush': target = globals()[func]
 	else: target = getattr(getattr(simuluxe,argd['module_name']),func)
 	target(**kwargs)
 	return	
