@@ -256,9 +256,11 @@ def makeface(arglist):
 			kwargs[sig] = arglist
 			argd['args'].remove(sig)
 			arglist = []
-		
+	
 	#---all remaining keywords are handled as flags
-	for a in arglist: kwargs[a] = True if a in argd['args'] else False
+	for a in list(arglist): 
+		kwargs[a] = True if a in argd['args'] else False
+		if a in argd['args']: arglist.remove(a)
 	if arglist != []: raise Exception('except: unprocessed arguments')
 
 	if argd['module_name'] == None and func != 'gitpush': target = globals()[func]
