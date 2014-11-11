@@ -173,7 +173,7 @@ def avail(simname=None,slices=False,display=True):
 	'''
 	
 	#---argument handling
-	if simname == None: simname = simuluxe.simdict.keys()
+	if simname == None or simname == []: simname = simuluxe.simdict.keys()
 	elif type(simname) == str: simname = [simname]
 
 	#---result dictionary
