@@ -8,6 +8,7 @@ import simuluxe
 
 #---imports 
 import re,subprocess
+import numpy as np
 
 #---UTILITY FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
