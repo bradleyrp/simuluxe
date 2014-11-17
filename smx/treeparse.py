@@ -234,12 +234,15 @@ def getslice(simname,trajslice):
 #---TIME SLICE
 #-------------------------------------------------------------------------------------------------------------
 	
-def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
+def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None):
 
 	'''
 	Make a time slice.\n
 	By default it writes the slice to the earliest step directory that holds the trajectory.
 	'''
+	
+	if selection != None and extraname = '': 
+		raise Exception('must specify extraname for specific selection.')
 
 	#---note currently set to do one slice at a time
 	if type(step) == list and len(step) == 1 and len(step[0]) == 1: step = step[0][0]
@@ -309,7 +312,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
 			print 'making directory: '+str(os.path.abspath(storedir))
 			os.mkdir(os.path.abspath(storedir))
 		final_name = storedir+'/'+outname
-		cwd = storedir
+		cwd = storedir+'/'
 	else: 
 		final_name = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname
 		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
@@ -317,28 +320,60 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
 	#---check if file already exists
 	if os.path.isfile(final_name): raise Exception('except: target file exists: '+final_name)
 	if os.path.isfile(final_name[:-4]+'.gro'): raise Exception('except: target gro file exists: '+final_name)
+
+	#---generate system.gro file for the full system
+	if selection != None:
+		stepdir,partfile,start,end,timestep = tl[0]
+		systemgro = cwd+final_name[:-4]+'.all.gro'
+		cmd = ' '.join(['trjconv',
+			'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
+			'-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
+			'-o '+systemgro,
+			'-b '+str(start),
+			'-e '+str(start),
+			'-dt '+str(timestep)])
+		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro-all.log',
+		    cwd=cwd,inpipe='0\n')
+
+	#---create group file
+	if selection != None:
+		cmd = ' '.join(['make_ndx',
+			'-f '+systemgro,
+			'-o index-'+extraname+'.ndx'])
+		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-make-ndx',
+		    cwd=cwd,inpipe='keep 0\n'+selection+'\nkeep 1\nq\n')
+	os.remove(systemgro)
 	
 	#---report
 	print 'time slices = '+str(tl)
+	
 	#---make individual slices
 	for ti in range(len(tl)):
 		stepdir,partfile,start,end,timestep = tl[ti]
 		cmd = ' '.join(['trjconv',
 			'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 			'-o '+partfile.strip('.'+form)+'_slice.'+form,
+			('-n index-'+extraname+'.ndx' if selection == None else ''),
+			('-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
+				if selection == None else ''),
 			'-b '+str(start),
 			'-e '+str(end),
 			'-dt '+str(timestep)])
-		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',cwd=cwd)
-		#---save a gro file
+		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
+			cwd=cwd,inpipe=(None if selection == None else '0\n'))
+		#---save a gro file on the first part of the time slice
 		if ti == 0:
 			cmd = ' '.join(['trjconv',
 				'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 				'-o '+final_name[:-4]+'.gro',
+				('-n index-'+extraname+'.ndx' if selection == None else ''),
+				('-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
+					if selection == None else ''),
 				'-b '+str(start),
 				'-e '+str(start),
 				'-dt '+str(timestep)])
-			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',cwd=cwd)
+			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro.log',
+                cwd=cwd,inpipe=(None if selection == None else '0\n'))
 
 	#---concatenate the slices
 	slicefiles = [cwd+s[1].strip('.'+form)+'_slice.'+form for s in tl]
