@@ -298,11 +298,14 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
 		print os.path.abspath(storedir)
 		if not os.path.abspath(storedir): os.mkdir(os.path.abspath(storedir))
 		final_name = smx.simdict[simname]['root']+'/'+simname+'/'+path+'/'+outname
-	else: final_name = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname
+		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+path+'/'
+	else: 
+		final_name = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname
+		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
 	
 	#---check if file already exists
-	if os.isfile(final_name): raise Exception('except: target file exists: '+final_name)
-	if os.isfile(final_name[:-4]+'.gro'): raise Exception('except: target gro file exists: '+final_name)
+	if os.path.isfile(final_name): raise Exception('except: target file exists: '+final_name)
+	if os.path.isfile(final_name[:-4]+'.gro'): raise Exception('except: target gro file exists: '+final_name)
 	
 	#---report
 	print 'time slices = '+str(tl)
