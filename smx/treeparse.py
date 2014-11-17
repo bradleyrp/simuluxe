@@ -293,10 +293,12 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
 				[int(re.findall(regex,i)[0][0]) for i in stepdirs])]
 			if oldsteps != []: startstep = int(re.findall(regex,oldsteps[-1])[0][0])
 			else: startstep = 0
-			storedir = pathletter+str('%02d'%(startstep+1))+'-'+path
+			storedir = smx.simdict[simname]['root']+'/'+simname+'/'+\
+				pathletter+str('%02d'%(startstep+1))+'-'+path
 		else: storedir = smx.simdict[simname]['root']+'/'+simname+'/'+path
-		print os.path.abspath(storedir)
-		if not os.path.abspath(storedir): os.mkdir(os.path.abspath(storedir))
+		if not os.path.abspath(storedir): 
+			print 'making directory: '+str(os.path.abspath(storedir))
+			os.mkdir(os.path.abspath(storedir))
 		final_name = smx.simdict[simname]['root']+'/'+simname+'/'+path+'/'+outname
 		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+path+'/'
 	else: 
