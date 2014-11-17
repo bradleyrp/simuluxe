@@ -8,10 +8,10 @@ Development only.
 #---imports
 import os,sys
 execfile(os.path.expanduser('~/.simuluxe_config.py'))
-import simuluxe,controller
+import smx,controller
 
 #---imports
-from simuluxe.io import trajectory_read
+from smx.io import trajectory_read
 import matplotlib as mpl
 import scipy
 from scipy import linalg
@@ -29,7 +29,7 @@ if 0: avail = simuluxe.avail(simname='membrane-v509')
 
 #---alternately "make timeslice membrane-v700-exo70-dilute s8-trestles 85000-95000-1000"
 if 0:
-	simuluxe.timeslice(
+	smx.timeslice(
 		simname='membrane-v700-exo70-dilute',
 		step='s8-trestles',
 		time='85000-95000-1000',

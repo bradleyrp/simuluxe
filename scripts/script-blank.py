@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 #---imports
-import os,sys
-execfile(os.path.expanduser('~/.simuluxe_config.py'))
-import simuluxe,controller
+from os.path import expanduser
+execfile(expanduser('~/.simuluxe_config.py'))
+from smx.simset import SimSet
+from smx.codetools import *
+from smx import *

@@ -8,10 +8,10 @@ import json
 import re
 
 #---imports
-import simuluxe
-from simuluxe.codetools import niceblock,confirm
+import smx
+from smx.codetools import niceblock,confirm
 
-helpstring = """u
+helpstring = """
 	
 	SIMULUXE simulation analysis tools
 	
@@ -140,21 +140,6 @@ def addconfig(setfile=None):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			
-def report():
-	
-	'''
-	Prints the current configuration.
-	'''
-	
-	init_local_config()
-	print '\nSTATUS:'
-	print '\nsimdict : holds metadata for your simulations'
-	print 'simdict = '+str(simuluxe.simdict)
-	print '\ndatapath : provides a parent directory where simulations can be found'
-	print 'datapaths = '+str(simuluxe.datapaths)
-	print '\nsetfiles : points to additional configuration files which may add to datapath and simdict'
-	print 'setfiles = '+str(simuluxe.setfiles)
-
 def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 
 	'''
@@ -169,11 +154,11 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 	if os.path.isfile(infofile):
 		print 'simdict file exists at '+infofile+' but I will overwrite'
 		if not confirm(): return
-	simdict = simuluxe.findsims(spider=spider)
+	simdict = smx.findsims(spider=spider)
 	with open(infofile,'w') as fp:
 		#---note that we must define simdict here
-		#---...simuluxe will execute the files in datapaths to create simuluxe.simdict
-		#---...execution of .simuluxe_config.py only loads paths while importing simuluxe gets data
+		#---...simuluxe will execute the files in datapaths to create smx.simdict
+		#---...execution of .simuluxe_config.py only loads paths while importing smx gets data
 		fp.write('#!/usr/bin/env python\n\nsimdict = {}\n')
 		for key in simdict.keys():
 			fp.write("simdict['"+key+"'] = \\\n")
@@ -233,7 +218,7 @@ def makeface(arglist):
 		argd['args'].remove('simname')
 		kwargs['simname'] = simnames
 	if 'step' in argd['args']:
-		kwargs['step'] = [[i['dir'] for i in simuluxe.simdict[sn]['steps'] if i['dir'] in arglist]
+		kwargs['step'] = [[i['dir'] for i in smx.simdict[sn]['steps'] if i['dir'] in arglist]
 			for sn in simnames]
 		for s in [j for i in kwargs['step'] for j in i]: 
 				if s in arglist: arglist.remove(s)
@@ -264,7 +249,7 @@ def makeface(arglist):
 	if arglist != []: raise Exception('except: unprocessed arguments')
 
 	if argd['module_name'] == None and func != 'gitpush': target = globals()[func]
-	else: target = getattr(getattr(simuluxe,argd['module_name']),func)
+	else: target = getattr(getattr(smx,argd['module_name']),func)
 	target(**kwargs)
 	return	
 
