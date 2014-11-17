@@ -277,13 +277,22 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
 		raise Exception('except: timestamps not aligned')
 		
 	#---default final file is in the directory of the first relevant trajectory file
-	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i) 
+	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i)
 		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+('.'+extraname if extraname != '' else '')+'.'+form
 	if path != None:
 		if pathletter == None: regex = '^[a-z]([0-9]{1,2})-(.+)'
 		else: regex = '^['+pathletter+']([0-9]{1,2})-(.+)'
-		#---if a path is given we write to the corresponding folder
-		if not re.match(regex,path):
+		fulldirs = glob.glob(smx.simdict[simname]['root']+'/'+simname+'/*')
+		dirs = [re.findall('^[a-z]([0-9]{1,2})-(.+)',os.path.basename(i))[0] for i in fulldirs]
+		#---search for numbered directory with the desired path
+		if any([i[1] == path for i in dirs]):
+			print 'found numbered directory with correct path: '+\
+				str(fulldirs[argsort([int(i[0]) for i in dirs])[-1]])
+			cwd = fulldirs[argsort([int(i[0]) for i in dirs])[-1]]+'/'  
+			storedir = cwd
+			final_name = cwd+outname
+		#---otherwise search for the path directly in case the user has supplied an explicit number
+		elif not re.match(regex,path):
 			#---if the path is not already available we mkdir with a new sequential number
 			#---the following codeblock was taken from automacs/chain_step
 			for root,dirnames,filenames in os.walk(smx.simdict[simname]['root']+'/'+simname): break
@@ -296,11 +305,11 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname=''):
 			storedir = smx.simdict[simname]['root']+'/'+simname+'/'+\
 				pathletter+str('%02d'%(startstep+1))+'-'+path
 		else: storedir = smx.simdict[simname]['root']+'/'+simname+'/'+path
-		if not os.path.abspath(storedir): 
+		if not os.path.isdir(os.path.abspath(storedir)):
 			print 'making directory: '+str(os.path.abspath(storedir))
 			os.mkdir(os.path.abspath(storedir))
-		final_name = smx.simdict[simname]['root']+'/'+simname+'/'+path+'/'+outname
-		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+path+'/'
+		final_name = storedir+'/'+outname
+		cwd = storedir
 	else: 
 		final_name = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname
 		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
