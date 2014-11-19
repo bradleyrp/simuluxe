@@ -7,6 +7,7 @@ import os,sys
 import os
 if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
 	execfile(os.path.expanduser('~/.simuluxe_config.py'))
+	simdict = {}
 	#---execute all configuration files on import
 	for setfile in setfiles: execfile(setfile)
 
