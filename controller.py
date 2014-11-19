@@ -140,7 +140,7 @@ def addconfig(setfile=None):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			
-def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
+def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False):
 
 	'''
 	Parse simulation data directories, load paths into a new configuration file, and check that it's in
@@ -153,7 +153,9 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 	infofile = os.path.abspath(os.path.expanduser(infofile))
 	if os.path.isfile(infofile):
 		print 'simdict file exists at '+infofile+' but I will overwrite'
-		if not confirm(): return
+		if not sure and not confirm():
+			print 'cancel'
+			return
 	simdict = smx.findsims(spider=spider)
 	with open(infofile,'w') as fp:
 		#---note that we must define simdict here
@@ -166,8 +168,8 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False):
 			for line in formstring.split('\n'):
 				fp.write('    '+line+'\n')
 			fp.write('\n')
-	if new or infofile not in simuluxe.setfiles: addconfig(infofile)
-	reload(simuluxe)
+	if new or infofile not in smx.setfiles: addconfig(infofile)
+	reload(smx)
 
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------

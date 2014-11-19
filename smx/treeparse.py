@@ -78,7 +78,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 				if dirpath == dp+'/'+top:
 					simtree[top] = dict()
 					simtree[top]['root'] = dp
-					steplist = [dn for dn in dirnames if re.search(r'^[s-z][0-9]\-.+',dn)]
+					steplist = [dn for dn in dirnames if re.search(r'^[a-z][0-9]{1,2}\-.+',dn)]
 					steplist = [steplist[j] for j in argsort([int(i[1:].split('-')[0]) for i in steplist])]
 					simtree[top]['steps'] = [{'dir':step} for step in steplist]
 					#---loop over subdirectories
@@ -142,7 +142,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 						#---grab concatenated trajectory files
 						for suf in traj_suf:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
-								if re.search(r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+\.'+suf+'$',fn)]
+								if re.search(r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)?\.'+suf+'$',fn)]
 							#---sort by part number
 							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
 							if valids != []: simtree[top]['steps'][stepnum]['trajs'] = list(valids)							
@@ -241,7 +241,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	By default it writes the slice to the earliest step directory that holds the trajectory.
 	'''
 	
-	if selection != None and extraname = '': 
+	if selection != None and extraname == '': 
 		raise Exception('must specify extraname for specific selection.')
 
 	#---note currently set to do one slice at a time
@@ -274,9 +274,19 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---check if the time span is big enough
 	if not any([j[2] <= start for j in tl]): raise Exception('except: time segment runs too early')
 	if not any([j[3] >= end for j in tl]): raise Exception('except: time segment runs too late')
-	#---check that the target segments provide a range with the correct intervals
-	if not all(np.concatenate([np.arange(i[2],i[3]+timestep,timestep) for i in tl]) == \
-		np.arange(start,end+timestep,timestep)):
+
+	#---in some edge cases the simulation starts from an earlier time so we use the more recent slice
+	for i in range(len(tl)-1):
+		if tl[i][3] > tl[i+1][2]:
+			tl[i][3] = tl[i+1][2]-timestep
+
+	#---check for desired timestamps
+	times_observed = np.concatenate([np.arange(i[2],i[3]+timestep,timestep) for i in tl])
+	times_desired = np.arange(start,end+timestep,timestep)
+	if not len(times_desired)==len(times_observed) or \
+		not all([times_observed[i]==times_desired[i] for i in range(len(times_observed))]):
+		print 'observed = '+str(list(times_observed))
+		print 'desired = '+str(list(times_desired))
 		raise Exception('except: timestamps not aligned')
 		
 	#---default final file is in the directory of the first relevant trajectory file
@@ -286,12 +296,11 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		if pathletter == None: regex = '^[a-z]([0-9]{1,2})-(.+)'
 		else: regex = '^['+pathletter+']([0-9]{1,2})-(.+)'
 		fulldirs = glob.glob(smx.simdict[simname]['root']+'/'+simname+'/*')
-		dirs = [re.findall('^[a-z]([0-9]{1,2})-(.+)',os.path.basename(i))[0] for i in fulldirs]
+		dirs = [list(re.findall(regex,os.path.basename(i))[0])+[i] for i in fulldirs
+			if re.match(regex,os.path.basename(i))]
 		#---search for numbered directory with the desired path
 		if any([i[1] == path for i in dirs]):
-			print 'found numbered directory with correct path: '+\
-				str(fulldirs[argsort([int(i[0]) for i in dirs])[-1]])
-			cwd = fulldirs[argsort([int(i[0]) for i in dirs])[-1]]+'/'  
+			cwd = os.path.abspath(dirs[argsort([int(i[0]) for i in dirs])[-1]][2])
 			storedir = cwd
 			final_name = cwd+outname
 		#---otherwise search for the path directly in case the user has supplied an explicit number
@@ -318,8 +327,9 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
 	
 	#---check if file already exists
-	if os.path.isfile(final_name): raise Exception('except: target file exists: '+final_name)
-	if os.path.isfile(final_name[:-4]+'.gro'): raise Exception('except: target gro file exists: '+final_name)
+	if os.path.isfile(final_name) or os.path.isfile(final_name[:-4]+'.gro'): 
+		print 'ignoring target file which exists: '+final_name
+		return
 
 	#---generate system.gro file for the full system
 	if selection != None:
@@ -334,15 +344,13 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			'-dt '+str(timestep)])
 		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro-all.log',
 		    cwd=cwd,inpipe='0\n')
-
-	#---create group file
-	if selection != None:
+		#---create group file
 		cmd = ' '.join(['make_ndx',
 			'-f '+systemgro,
 			'-o index-'+extraname+'.ndx'])
 		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-make-ndx',
 		    cwd=cwd,inpipe='keep 0\n'+selection+'\nkeep 1\nq\n')
-	os.remove(systemgro)
+		os.remove(systemgro)
 	
 	#---report
 	print 'time slices = '+str(tl)
@@ -353,27 +361,29 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		cmd = ' '.join(['trjconv',
 			'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 			'-o '+partfile.strip('.'+form)+'_slice.'+form,
-			('-n index-'+extraname+'.ndx' if selection == None else ''),
+			('-n index-'+extraname+'.ndx' if selection != None else ''),
 			('-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
-				if selection == None else ''),
+				if selection != None else ''),
 			'-b '+str(start),
 			'-e '+str(end),
 			'-dt '+str(timestep)])
+		print "Running " + cmd
+		print cwd
 		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
-			cwd=cwd,inpipe=(None if selection == None else '0\n'))
+			cwd=cwd,inpipe=(None if selection != None else '0\n'))
 		#---save a gro file on the first part of the time slice
 		if ti == 0:
 			cmd = ' '.join(['trjconv',
 				'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 				'-o '+final_name[:-4]+'.gro',
-				('-n index-'+extraname+'.ndx' if selection == None else ''),
+				('-n index-'+extraname+'.ndx' if selection != None else ''),
 				('-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
-					if selection == None else ''),
+					if selection != None else ''),
 				'-b '+str(start),
 				'-e '+str(start),
 				'-dt '+str(timestep)])
 			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro.log',
-                cwd=cwd,inpipe=(None if selection == None else '0\n'))
+                cwd=cwd,inpipe=(None if selection != None else '0\n'))
 
 	#---concatenate the slices
 	slicefiles = [cwd+s[1].strip('.'+form)+'_slice.'+form for s in tl]
