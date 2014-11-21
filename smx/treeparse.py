@@ -10,9 +10,46 @@ import smx
 import copy,glob
 import re,subprocess
 import numpy as np
+import datetime,time
 
 #---UTILITY FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
+
+class tee(object):
+	'''
+	Routes print statements to the screen and a log file.
+	
+	Routes output to multiple streams, namely a log file and stdout, emulating the linux "tee" function. 
+	Whenever a new log file is desired, use the following code to replace ``sys.stdout`` and route all print
+	statements to both the screen and the log file. ::
+		
+		sys.stdout = tee(open(self.rootdir+'log-script-master','a',1))
+		
+	Initialize the object with a file handle for the new log file. It is possible to run ``tee`` multiple
+	times in order to redirect ``print`` output to a new file. The new object checks to see if 
+	``sys.stdout`` is a tee object or the "real" stream, and rolls both into the new object.
+	'''
+	def __init__(self, *files,**kwargs):
+		#---if sys.stdout is already a tee object, then just steal its stdout member
+		if str(sys.stdout.__class__) == "<class 'amx.tools.tee'>": self.stdout = sys.stdout.stdout
+		#---otherwise set stdout from scratch
+		else: 
+			if 'error' in kwargs.keys() and kwargs['error'] == True: self.stdout = sys.stderr
+			else: self.stdout = sys.stderr
+		self.files = files
+		if 'error' in kwargs.keys() and kwargs['error'] == True: self.error = True
+		else: self.error = False
+	def write(self, obj): 
+		'''
+		The write function here emulates the write functions for both files and the standard output stream
+		so that the tee object will always write to both places.
+		'''
+		st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M') if not self.error else ''
+		if obj != '\n': self.stdout.write(st+' ')
+		self.stdout.write(obj)
+		for f in self.files:
+			if obj != '\n': f.write(st+' ')
+			f.write(obj)
 
 #---classic python argsort
 def argsort(seq): return [x for x,y in sorted(enumerate(seq), key = lambda x: x[1])]
@@ -177,22 +214,31 @@ def avail(simname=None,slices=False,display=True):
 	'''
 	List available time slices for a simulation according to its root name.
 	'''
-	
+	print 'inside'
+	print display
+	print slices
 	#---argument handling
 	if simname == None or simname == []: simname = smx.simdict.keys()
 	elif type(simname) == str: simname = [simname]
 
 	#---result dictionary
 	listing = []
-	
+	paths = {}
 	if slices:
 		#---specifically list the prepared slices
 		for sn in simname:
+			paths_sim = {}
 			if 'steps' in smx.simdict[sn].keys():
-				for step in smx.simdict[sn]['steps']:
+				for step in smx.simdict[sn]['steps'][::-1]:
 					if 'trajs' in step.keys():
+						paths_sim['trajs'] = []
 						for traj in step['trajs']:
-							if display: print sn.ljust(30,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
+							if display:
+								print sn.ljust(30,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
+							paths_sim['trajs'].append(sn+'/'+step['dir']+'/'+traj)							
+					if 'key_files' in step.keys() and 'gro' not in paths_sim.keys():
+						paths_sim['gro'] = sn+'/'+step['dir']+'/'+step['key_files'][0]
+			if paths_sim != {}: paths[sn] = copy.deepcopy(paths_sim)
 	else:
 		#---list slices according to time slices
 		dictlist = []
@@ -213,7 +259,7 @@ def avail(simname=None,slices=False,display=True):
 
 	#---print results but also return a dictionary
 	#---? development note: the returned listing needs more data to specify simname and step
-	return listing
+	return paths
 	
 def getslice(simname,trajslice):
 	
