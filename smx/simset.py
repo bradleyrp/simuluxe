@@ -4,6 +4,8 @@
 import MDAnalysis
 from smx.codetools import *
 
+from numpy import *
+
 class SimSet:
 
 	def __init__(self):
@@ -86,4 +88,34 @@ class SimSet:
 			self.vecs_index.append(frameno)
 			return vec
 		else: return self.vecs[self.vecs_index.index(frameno)]
+		
+	def identify_monolayers(self,atomdirectors,startframeno=0):
+		'''General monolayer identifier function. Needs: names of outer, inner atoms on lipids.'''
+		status('status: identifying monolayers')
+		if 0: status('status: moving to frame '+str(startframeno))
+		self.gotoframe(startframeno)
+		pointouts = self.universe.selectAtoms(atomdirectors[0])
+		pointins = [self.universe.selectAtoms(atomdirectors[j]).coordinates() 
+			for j in range(1,len(atomdirectors))]
+		whichlayer = [0 if i > 0.0 else 1 for i in pointouts.coordinates()[:,2] - mean(pointins,axis=0)[:,2]]
+		monos = []
+		#---monos separates the lipids by absolute index into monolayers from index zero
+		monos.append([pointouts.resids()[i]-1 for i in range(len(whichlayer)) if whichlayer[i] == 0])
+		monos.append([pointouts.resids()[i]-1 for i in range(len(whichlayer)) if whichlayer[i] == 1])
+		#---monolayer rerack hack if some residue IDs are missing
+		#---Nb this may affect the tilter, mesher, identify_residues, and batch_gr functions so beware
+		if (max(monos[0]+monos[1])-min(monos[0]+monos[1])) != len(monos[0]+monos[1])-1:
+			print 'warning: resorting the monolayer indices because there is a mismatch'
+			#---reracker is a sorted list of all of the absolute indices
+			reracker = list(sort(monos[0]+monos[1]))
+			#---monos_rerack is a copy of reracker in relative indices which is separated into monolayers 
+			monos_rerack = [[reracker.index(i) for i in monos[m]] for m in range(2)]
+			self.monolayer_residues_abs = monos
+			#---resids_reracker is in absolute units
+			self.resids_reracker = reracker
+			#---monolayer_residues is in relative units
+			self.monolayer_residues = monos_rerack
+		else: self.monolayer_residues = monos
+		if len(monos[0]) != len(monos[1]):
+			print 'warning: there is a difference in the number of lipids per monolayer'
 

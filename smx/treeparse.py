@@ -214,9 +214,7 @@ def avail(simname=None,slices=False,display=True):
 	'''
 	List available time slices for a simulation according to its root name.
 	'''
-	print 'inside'
-	print display
-	print slices
+
 	#---argument handling
 	if simname == None or simname == []: simname = smx.simdict.keys()
 	elif type(simname) == str: simname = [simname]
