@@ -208,7 +208,44 @@ def latest_simdat(simname,traj,tpr):
 				and groname in step['key_files']:
 				calcfiles['gro'] = smx.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+groname
 	return calcfiles
+
+def get_slices(simname,groupname=None,timestamp=None):
 	
+	'''
+	Return all post-processed slices of a simulation.
+	'''
+
+	slices = [[s['dir']+'/'+t for t in s['trajs']] 
+		for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
+	#---return all slices if groupname is undefined
+	if groupname == None and timestamp == None: 
+		slices = [[s['dir']+'/'+t for t in s['trajs']] 
+			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
+		return [simname+'/'+i for j in slices for i in j]
+	#---if groupname is supplied, then ensure that these slices use that keyword after the timestamp
+	elif groupname != None and timestamp == None:
+		regex = re.compile('^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+\.([a-z,A-Z,0-9,_]+)\.[a-z]{3}')
+		slices = [[s['dir']+'/'+t for t in s['trajs']
+			if regex.match(t) and regex.findall(t)[0]==groupname]
+			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
+		return [simname+'/'+i for j in slices for i in j]
+	#---check for requested timestamp
+	elif groupname == None and timestamp != None:
+		regex = re.compile('^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.([a-z,A-Z,0-9,_]+)\.[a-z]{3}')
+		slices = [[s['dir']+'/'+t for t in s['trajs']
+			if regex.match(t) and '-'.join(regex.findall(t)[0][:3])==timestamp]
+			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
+		return [simname+'/'+i for j in slices for i in j]
+	#---check for requested timestamp
+	elif groupname != None and timestamp != None:
+		regex = re.compile('^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.([a-z,A-Z,0-9,_]+)\.[a-z]{3}')
+		slices = [[s['dir']+'/'+t for t in s['trajs']
+			if regex.match(t) and regex.findall(t)[0][-1]==groupname and
+			'-'.join(regex.findall(t)[0][:3])==timestamp]
+			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
+		return [simname+'/'+i for j in slices for i in j]
+	#---note add checks for corresponding gro file here so that we always choose the most obvious gro file
+
 def avail(simname=None,slices=False,display=True):
 	
 	'''
@@ -257,6 +294,7 @@ def avail(simname=None,slices=False,display=True):
 
 	#---print results but also return a dictionary
 	#---? development note: the returned listing needs more data to specify simname and step
+	#---? development note: see get_slices above for more intuitive lookups of prepared slices
 	return paths
 	
 def getslice(simname,trajslice):
