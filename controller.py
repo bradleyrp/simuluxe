@@ -102,13 +102,6 @@ def init_local_config():
 			fp.write("slwd = '"+slwd+"'\n")
 			fp.write("sys.path.append(slwd)\n")
 			fp.write('\n#---customize below\n')
-		#---push these variables to globals for consistency with downstream programs that might check
-		#---note that this may be deprecated
-		if 0:
-			globals()['slwd'] = slwd
-			globals()['datapaths'] = []
-			globals()['setfiles'] = []
-			globals()['simdict'] = {}
 		return True
 	else: return False
 
@@ -122,7 +115,7 @@ def addpath(datapath=None):
 	if type(datapath) != list: datapath = [datapath]
 	for n in datapath:
 		fullpath = os.path.abspath(os.path.expanduser(n))
-		if ((not new and fullpath not in datapaths) or new) and os.path.isdir(fullpath):
+		if ((not new and fullpath not in smx.datapaths) or new) and os.path.isdir(fullpath):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("datapaths.append('"+fullpath+"')\n")
 
@@ -202,7 +195,7 @@ def makeface(arglist):
 	argdict = {
 		'avail':{'args':['simname','slices'],'module_name':'treeparse'},
 		'timeslice':{'args':['simname','step','timerange','form'],'module_name':'treeparse'},
-		'catalog':{'args':['infofile','xtctime','edrtime','trrtime'],'module_name':None},
+		'catalog':{'args':['infofile','xtctime','edrtime','trrtime','sure'],'module_name':None},
 		'addpath':{'args':['datapath'],'module_name':None},
 		'addconfig':{'args':['setfile'],'module_name':None},
 		}
@@ -223,7 +216,7 @@ def makeface(arglist):
 		kwargs['step'] = [[i['dir'] for i in smx.simdict[sn]['steps'] if i['dir'] in arglist]
 			for sn in simnames]
 		for s in [j for i in kwargs['step'] for j in i]: 
-				if s in arglist: arglist.remove(s)
+			if s in arglist: arglist.remove(s)
 	if 'timerange' in argd['args']:
 		timerange = [i for i in arglist if len(i.split('-'))==3]
 		if len(timerange) != 1: raise Exception('except: unclear time range')

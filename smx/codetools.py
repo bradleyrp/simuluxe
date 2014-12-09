@@ -10,13 +10,48 @@ These tools aid in rapid development, debugging, and monitoring.
 #-------------------------------------------------------------------------------------------------------------
 
 #---imports 
-import sys, atexit, code, re, time, argparse
+import sys,atexit,code,re
+import time, argparse,subprocess
 
 #---MONITORING FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
 
 #---record a global start time
 global_start_time = time.time()
+
+#---classic python argsort
+def argsort(seq): return [x for x,y in sorted(enumerate(seq), key = lambda x: x[1])]
+
+def call(command,logfile=None,cwd=None,silent=False,inpipe=None):
+	'''
+	Wrapper for system calls in a different directory with a dedicated log file.
+	'''
+	#---needs changed to match the lack of tee functionality in simuluxe
+	if inpipe != None:
+		output = open(('' if cwd == None else cwd)+logfile,'wb')
+		if type(command) == list: command = ' '.join(command)
+		p = subprocess.Popen(command,stdout=output,stdin=subprocess.PIPE,stderr=output,cwd=cwd,shell=True)
+		catch = p.communicate(input=inpipe)[0]
+	else:
+		if type(command) == list: command = ' '.join(command)
+		if logfile != None:
+			output = open(('' if cwd == None else cwd)+logfile,'wb')
+			if type(command) == list: command = ' '.join(command)
+			if not silent: print 'executing command: "'+str(command)+'" logfile = '+logfile
+			try:
+				subprocess.check_call(command,
+					shell=True,
+					stdout=output,
+					stderr=output,
+					cwd=cwd)
+			except: raise Exception('except: execution error')
+			output.close()
+		else: 
+			if not silent: print 'executing command: "'+str(command)+'"'
+			if str(sys.stdout.__class__) == "<class 'smx.tools.tee'>": stderr = sys.stdout.files[0]
+			else: stderr = sys.stdout
+			try: subprocess.check_call(command,shell=True,stderr=stderr,cwd=cwd)
+			except: raise Exception('except: execution error')
 
 def niceblock(text,newlines=False):
 	'''Remove tabs so that large multiline text doesn't awkwardly wrap in the code.'''

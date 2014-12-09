@@ -12,79 +12,8 @@ import re,subprocess
 import numpy as np
 import datetime,time
 
-#---UTILITY FUNCTIONS
-#-------------------------------------------------------------------------------------------------------------
-
-class tee(object):
-	'''
-	Routes print statements to the screen and a log file.
-	
-	Routes output to multiple streams, namely a log file and stdout, emulating the linux "tee" function. 
-	Whenever a new log file is desired, use the following code to replace ``sys.stdout`` and route all print
-	statements to both the screen and the log file. ::
-		
-		sys.stdout = tee(open(self.rootdir+'log-script-master','a',1))
-		
-	Initialize the object with a file handle for the new log file. It is possible to run ``tee`` multiple
-	times in order to redirect ``print`` output to a new file. The new object checks to see if 
-	``sys.stdout`` is a tee object or the "real" stream, and rolls both into the new object.
-	'''
-	def __init__(self, *files,**kwargs):
-		#---if sys.stdout is already a tee object, then just steal its stdout member
-		if str(sys.stdout.__class__) == "<class 'amx.tools.tee'>": self.stdout = sys.stdout.stdout
-		#---otherwise set stdout from scratch
-		else: 
-			if 'error' in kwargs.keys() and kwargs['error'] == True: self.stdout = sys.stderr
-			else: self.stdout = sys.stderr
-		self.files = files
-		if 'error' in kwargs.keys() and kwargs['error'] == True: self.error = True
-		else: self.error = False
-	def write(self, obj): 
-		'''
-		The write function here emulates the write functions for both files and the standard output stream
-		so that the tee object will always write to both places.
-		'''
-		st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M') if not self.error else ''
-		if obj != '\n': self.stdout.write(st+' ')
-		self.stdout.write(obj)
-		for f in self.files:
-			if obj != '\n': f.write(st+' ')
-			f.write(obj)
-
-#---classic python argsort
-def argsort(seq): return [x for x,y in sorted(enumerate(seq), key = lambda x: x[1])]
-
-def call(command,logfile=None,cwd=None,silent=False,inpipe=None):
-	'''
-	Wrapper for system calls in a different directory with a dedicated log file.\n
-	Note that outsourcing call to codetools produces execution errors.
-	'''
-	#---needs changed to match the lack of tee functionality in simuluxe
-	if inpipe != None:
-		output = open(('' if cwd == None else cwd)+logfile,'wb')
-		if type(command) == list: command = ' '.join(command)
-		p = subprocess.Popen(command,stdout=output,stdin=subprocess.PIPE,stderr=output,cwd=cwd,shell=True)
-		catch = p.communicate(input=inpipe)[0]
-	else:
-		if type(command) == list: command = ' '.join(command)
-		if logfile != None:
-			output = open(('' if cwd == None else cwd)+logfile,'wb')
-			if type(command) == list: command = ' '.join(command)
-			if not silent: print 'executing command: "'+str(command)+'" logfile = '+logfile
-			try:
-				subprocess.check_call(command,
-					shell=True,
-					stdout=output,
-					stderr=output,
-					cwd=cwd)
-			except: raise Exception('except: execution error')
-			output.close()
-		else: 
-			if not silent: print 'executing command: "'+str(command)+'"'
-			if str(sys.stdout.__class__) == "<class 'smx.tools.tee'>": stderr = sys.stdout.files[0]
-			else: stderr = sys.stdout
-			try: subprocess.check_call(command,shell=True,stderr=stderr,cwd=cwd)
-			except: raise Exception('except: execution error')
+#---import codetools
+from codetools import *
 
 #---CATALOG
 #-------------------------------------------------------------------------------------------------------------
@@ -106,6 +35,8 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	if key_files == None: key_files = ['system.gro','system-input.gro']
 	traj_suf = ['trr','xtc']
 
+	catted_re = r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)(\.[a-z,A-Z,0-9,_]+)?\.'
+
 	#---search all datapaths for simulations
 	for dp in datapaths:
 		tops = [f for f in os.listdir(dp+'/') for top in top_prefixes if re.search(r'^'+top+'\-v.+', f)]
@@ -116,7 +47,15 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 					simtree[top] = dict()
 					simtree[top]['root'] = dp
 					steplist = [dn for dn in dirnames if re.search(r'^[a-z][0-9]{1,2}\-.+',dn)]
+					#---old method
 					steplist = [steplist[j] for j in argsort([int(i[1:].split('-')[0]) for i in steplist])]
+					#---the following ord hack will sort first by letter then by number
+					#---...which allows backwards compatibility with directories 
+					#---...named e.g. s8-kraken t1-trestles but is redundant for new simulations which
+					#---...use 2-digits e.g. s12-walnut (this was necessary because step ordering matters in 
+					#---...timeslice functions
+					steplist = [steplist[j] for j in smx.argsort([(ord(i[0])-96)*26+int(i[1:].split('-')[0]) 
+						for i in steplist])]
 					simtree[top]['steps'] = [{'dir':step} for step in steplist]
 					#---loop over subdirectories
 					for stepnum,sd in enumerate(steplist):
@@ -179,73 +118,73 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 						#---grab concatenated trajectory files
 						for suf in traj_suf:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
-								if re.search(r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)?\.'+suf+'$',fn)]
+								if re.search(catted_re+suf+'$',fn)]
 							#---sort by part number
 							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
-							if valids != []: simtree[top]['steps'][stepnum]['trajs'] = list(valids)							
-							
+							if valids != []: 
+								if 'trajs' in simtree[top]['steps'][stepnum].keys():
+									simtree[top]['steps'][stepnum]['trajs'].extend(list(valids))
+								else:
+									simtree[top]['steps'][stepnum]['trajs'] = list(valids)
+						#---grab gro files for concatenated trajectory files
+						for suf in ['gro']:
+							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
+								if re.search(catted_re+suf+'$',fn)]
+							#---sort by part number
+							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
+							if valids != []: 
+								if 'trajs_gro' in simtree[top]['steps'][stepnum].keys():
+									simtree[top]['steps'][stepnum]['trajs_gro'].extend(list(valids))
+								else:
+									simtree[top]['steps'][stepnum]['trajs_gro'] = list(valids)
+						
 	#---send dictionary back to controller to write to file
 	return simtree
 	
 #---LOOKUPS
 #-------------------------------------------------------------------------------------------------------------
 	
-def latest_simdat(simname,traj,tpr):
-
-	'''
-	Retrieve the latest TPR, TRR, and GRO file for a particular simulation name.
-	'''
-	
-	#---find latest files
-	calcfiles = {'trr':None,'tpr':None,'gro':None}
-	for si,step in reversed(list(enumerate(smx.simdict[simname]['steps']))):
-		if calcfiles['trr'] == None and 'trr' in step.keys() and step['trr'] != []: 
-			calcfiles['trr'] = smx.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+step['trr'][0]
-		if calcfiles['tpr'] == None and 'tpr' in step.keys() and step['tpr'] != []: 
-			calcfiles['tpr'] = smx.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+step['tpr'][0]
-		for groname in ['system-input.gro','system.gro']:
-			if calcfiles['gro'] == None and 'key_files' in step.keys() \
-				and groname in step['key_files']:
-				calcfiles['gro'] = smx.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/'+groname
-	return calcfiles
-
-def get_slices(simname,groupname=None,timestamp=None):
+def get_slices(simname,groupname=None,timestamp=None,unique=True,pbcmol=False,wrap=None):
 	
 	'''
 	Return all post-processed slices of a simulation.
 	'''
-
-	slices = [[s['dir']+'/'+t for t in s['trajs']] 
-		for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
-	#---return all slices if groupname is undefined
-	if groupname == None and timestamp == None: 
-		slices = [[s['dir']+'/'+t for t in s['trajs']] 
-			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
-		return [simname+'/'+i for j in slices for i in j]
-	#---if groupname is supplied, then ensure that these slices use that keyword after the timestamp
-	elif groupname != None and timestamp == None:
-		regex = re.compile('^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+\.([a-z,A-Z,0-9,_]+)\.[a-z]{3}')
-		slices = [[s['dir']+'/'+t for t in s['trajs']
-			if regex.match(t) and regex.findall(t)[0]==groupname]
-			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
-		return [simname+'/'+i for j in slices for i in j]
-	#---check for requested timestamp
-	elif groupname == None and timestamp != None:
-		regex = re.compile('^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.([a-z,A-Z,0-9,_]+)\.[a-z]{3}')
-		slices = [[s['dir']+'/'+t for t in s['trajs']
-			if regex.match(t) and '-'.join(regex.findall(t)[0][:3])==timestamp]
-			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
-		return [simname+'/'+i for j in slices for i in j]
-	#---check for requested timestamp
-	elif groupname != None and timestamp != None:
-		regex = re.compile('^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.([a-z,A-Z,0-9,_]+)\.[a-z]{3}')
-		slices = [[s['dir']+'/'+t for t in s['trajs']
-			if regex.match(t) and regex.findall(t)[0][-1]==groupname and
-			'-'.join(regex.findall(t)[0][:3])==timestamp]
-			for s in smx.simdict['membrane-v531']['steps'] if 'trajs' in s.keys()]
-		return [simname+'/'+i for j in slices for i in j]
-	#---note add checks for corresponding gro file here so that we always choose the most obvious gro file
-
+	
+	#---note that this code is clumsy and needs reworked to be more general
+	
+	slist = []
+	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.([a-z,A-Z,0-9,_]+)'+\
+		'\.?([a-z,A-Z,0-9,_]+)?\.[a-z]{3}'
+	for s in smx.simdict[simname]['steps']:
+		rootdir = smx.simdict[simname]['root']
+		if 'trajs' in s.keys():
+			for t in s['trajs']:
+				if 'trajs_gro' in s.keys() and t[:-3]+'gro' in s['trajs_gro']:
+					add = False
+					regex = re.compile(re_group_timestamp)
+					if groupname == None and timestamp == None and wrap == None: add = True
+					elif groupname != None and timestamp == None and wrap == None:
+						if regex.match(t) and regex.findall(t)[3] == groupname: add = True
+					elif groupname == None and timestamp != None and wrap == None:
+						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp: add = True
+					elif groupname != None and timestamp != None and wrap == None:
+						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
+						'-'.join(regex.findall(t)[0][:3])==timestamp: add = True
+					elif groupname == None and timestamp != None and wrap != None:
+						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
+						regex.findall(t)[0][4] == wrap: add = True
+					elif groupname != None and timestamp != None and wrap != None:
+						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
+						'-'.join(regex.findall(t)[0][:3])==timestamp and \
+						regex.findall(t)[0][4] == wrap: add = True
+					if add: 
+						slist.append((
+							rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
+							rootdir+'/'+simname+'/'+s['dir']+'/'+t))
+	if unique and len(slist) != 1: raise Exception('except: non-unique slices available: '+str(slist))
+	elif unique: return slist[0]
+	else: return slist
+			
 def avail(simname=None,slices=False,display=True):
 	
 	'''
@@ -294,29 +233,13 @@ def avail(simname=None,slices=False,display=True):
 
 	#---print results but also return a dictionary
 	#---? development note: the returned listing needs more data to specify simname and step
-	#---? development note: see get_slices above for more intuitive lookups of prepared slices
 	return paths
 	
-def getslice(simname,trajslice):
-	
-	'''
-	Return a structure and trajectory given the trajectory slice name.
-	'''
-	
-	for step in smx.simdict[simname]['steps'][::-1]:
-		if 'key_files' in step.keys() and 'system-input.gro' in step['key_files']:
-			grofile = smx.simdict[simname]['root']+'/'+simname+'/'+step['dir']+'/system-input.gro'
-			break 
-	stepname = [step['dir'] for step in smx.simdict[simname]['steps']
-		if 'trajs' in step.keys() and trajslice in step['trajs']][0]
-	trajname = smx.simdict['membrane-v532']['root']+'/'+simname+'/'+stepname+'/'+trajslice
-	return grofile,trajname
-
-
 #---TIME SLICE
 #-------------------------------------------------------------------------------------------------------------
 	
-def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None):
+def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None,
+	pbcmol=False):
 
 	'''
 	Make a time slice.\n
@@ -329,7 +252,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---note currently set to do one slice at a time
 	if type(step) == list and len(step) == 1 and len(step[0]) == 1: step = step[0][0]
 	if type(simname) == list and len(simname) == 1: simname = simname[0]
-	elif type(simname) == list and len(simname) != 1: raise Exception('except: invalid selections')
+	elif type(simname) == list and len(simname) != 1: print ('except: invalid selections')
 
 	#---unpack the timestamp
 	start,end,timestep = [int(i) for i in time.split('-')]
@@ -353,9 +276,10 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 						else: t1 = int(seg[3]/timestep)*timestep
 						seg[2:4] = t0,t1
 						tl.append(seg)
+
 	#---check if the time span is big enough
-	if not any([j[2] <= start for j in tl]): raise Exception('except: time segment runs too early')
-	if not any([j[3] >= end for j in tl]): raise Exception('except: time segment runs too late')
+	if not any([j[2] <= start for j in tl]): print ('except: time segment runs too early')
+	if not any([j[3] >= end for j in tl]): print ('except: time segment runs too late')
 
 	#---in some edge cases the simulation starts from an earlier time so we use the more recent slice
 	for i in range(len(tl)-1):
@@ -369,11 +293,15 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		not all([times_observed[i]==times_desired[i] for i in range(len(times_observed))]):
 		print 'observed = '+str(list(times_observed))
 		print 'desired = '+str(list(times_desired))
-		raise Exception('except: timestamps not aligned')
+		if abs(len(times_observed)-len(times_desired)) <=3:
+			print 'warning: timestamps not aligned but will try anyway (may be faulty edr file)'
+		else: print ('except: timestamps not aligned')
 		
 	#---default final file is in the directory of the first relevant trajectory file
 	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i)
-		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+('.'+extraname if extraname != '' else '')+'.'+form
+		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+\
+		('.'+extraname if extraname != '' else '')+\
+		('.pbcmol' if pbcmol else '')+'.'+form
 	if path != None:
 		if pathletter == None: regex = '^[a-z]([0-9]{1,2})-(.+)'
 		else: regex = '^['+pathletter+']([0-9]{1,2})-(.+)'
@@ -409,6 +337,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		cwd = smx.simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
 	
 	#---check if file already exists
+	#---? check both gro and trajectory before continuing
 	if os.path.isfile(final_name) or os.path.isfile(final_name[:-4]+'.gro'): 
 		print 'ignoring target file which exists: '+final_name
 		return
@@ -443,9 +372,10 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		cmd = ' '.join(['trjconv',
 			'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 			'-o '+partfile.strip('.'+form)+'_slice.'+form,
+			('-pbc mol' if pbcmol else ''),
 			('-n index-'+extraname+'.ndx' if selection != None else ''),
 			('-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
-				if selection != None else ''),
+				if selection != None or pbcmol else ''),
 			'-b '+str(start),
 			'-e '+str(end),
 			'-dt '+str(timestep)])
@@ -458,9 +388,9 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			cmd = ' '.join(['trjconv',
 				'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 				'-o '+final_name[:-4]+'.gro',
+				('-pbc mol' if pbcmol else ''),
 				('-n index-'+extraname+'.ndx' if selection != None else ''),
-				('-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
-					if selection != None else ''),
+				'-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
 				'-b '+str(start),
 				'-e '+str(start),
 				'-dt '+str(timestep)])

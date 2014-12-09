@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python -i
 
 '''
 Script which tests controller functions.
@@ -25,8 +25,9 @@ from numpy import fft
 #---three ways to call the function
 #---from simuluxe directory run "make avail membrane-v509 membrane-v630"
 if 0: avail = controller.makeface(['avail','membrane-v509'])
-if 0: avail = simuluxe.avail(simname='membrane-v509')
+if 0: avail = smx.avail(simname='membrane-v509')
 
+#---make a time slice with the following code
 #---alternately "make timeslice membrane-v700-exo70-dilute s8-trestles 85000-95000-1000"
 if 0:
 	smx.timeslice(
@@ -42,13 +43,14 @@ if 0:
 In the following section I attempt to reset the whole simuluxe system from scratch.
 But the imports are far too complex and clumsy.
 Deploy the system to ~/worker/simuluxe for code, ~/worker/simuluxe-work for development,
-	and ~/worker/simuluxe-data/simdict.py for storing the simdict using the following:
+	and store the simdict in ~/worker/simuluxe-work/simdict.py using the following command:
 
-rm ~/.simuluxe.config; make addpath ~/compbio; make catalog ~/simuluxe-data/simdict.py
-rm ~/.simuluxe.config; make addpath ~/compbio;
+	rm ~/.simuluxe.config; make addpath ~/compbio; make addpath ~/store-omicron/membrane-v5xx/; 
+	make catalog ~/worker/simuluxe-work/simdict.py sure
+	
 
 If you skip making the catalog, you can run the following to do so, only if you have the 
-	standard import given above.
+	standard import given above:
 	
-controller.catalog(infofile='~/worker/simuluxe-data/simdict.py',edrtime=True)
+	controller.catalog(infofile='~/worker/simuluxe-data/simdict.py',edrtime=True)
 '''

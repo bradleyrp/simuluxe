@@ -26,4 +26,5 @@ except: print 'matplotlib/pylab not found'
 #---note it may be necessary to import explicitly
 from codetools import *
 from treeparse import *
+from datastore import *
 from io import *
