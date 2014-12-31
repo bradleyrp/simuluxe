@@ -129,7 +129,9 @@ def addconfig(setfile=None):
 	if type(setfile) != list: setfile = [setfile]
 	for n in setfile:
 		fullpath = os.path.abspath(os.path.expanduser(n))
-		if ((not new and fullpath not in smx.setfiles) or new) and os.path.isfile(fullpath):
+		if not os.path.isfile(fullpath):
+			raise Exception('except: path not found')
+		elif ((not new and fullpath not in smx.setfiles) or new):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			

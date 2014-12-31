@@ -15,6 +15,9 @@ import datetime,time
 #---import codetools
 from codetools import *
 
+#---gromacs executable names
+def gmxpaths(pname): return pname+''
+
 #---CATALOG
 #-------------------------------------------------------------------------------------------------------------
 
@@ -35,7 +38,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	if key_files == None: key_files = ['system.gro','system-input.gro']
 	traj_suf = ['trr','xtc']
 
-	catted_re = r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)(\.[a-z,A-Z,0-9,_]+)?\.'
+	catted_re = r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)?(\.[a-z,A-Z,0-9,_]+)?\.?'
 
 	#---search all datapaths for simulations
 	for dp in datapaths:
@@ -68,7 +71,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 						#---for each part number check for available files
 						for pn in parts:
 							newpart = dict()
-							prefix = 'md.part'+'{:04d}'.format(pn)+'.'
+							prefix = 'md.part'+'%04d'%pn+'.'
 							for suf in ['xtc','trr','edr','gro']:
 								if prefix+suf in filenames: newpart[suf] = prefix+suf
 							simtree[top]['steps'][stepnum]['parts'].append(newpart)
@@ -76,7 +79,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 								#---gmxcheck
 								typecheck = 'edr'
 								if typecheck == 'edr':
-									command = ['gmxcheck',
+									command = [gmxpaths('gmxcheck'),
 										{'trr':'-f','xtc':'-f','edr':'-e'}[typecheck],
 										simtree[top]['root']+'/'+top+'/'+\
 										simtree[top]['steps'][stepnum]['dir']+'/'+prefix+typecheck]
@@ -345,18 +348,18 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---generate system.gro file for the full system
 	if selection != None:
 		stepdir,partfile,start,end,timestep = tl[0]
-		systemgro = cwd+final_name[:-4]+'.all.gro'
-		cmd = ' '.join(['trjconv',
+		systemgro = final_name[:-4]+'.'+extraname+'.gro'
+		cmd = ' '.join([gmxpaths('trjconv'),
 			'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 			'-s '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
 			'-o '+systemgro,
 			'-b '+str(start),
 			'-e '+str(start),
 			'-dt '+str(timestep)])
-		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro-all.log',
+		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro-'+extraname+'.log',
 		    cwd=cwd,inpipe='0\n')
 		#---create group file
-		cmd = ' '.join(['make_ndx',
+		cmd = ' '.join([gmxpaths('make_ndx'),
 			'-f '+systemgro,
 			'-o index-'+extraname+'.ndx'])
 		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-make-ndx',
@@ -369,7 +372,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---make individual slices
 	for ti in range(len(tl)):
 		stepdir,partfile,start,end,timestep = tl[ti]
-		cmd = ' '.join(['trjconv',
+		cmd = ' '.join([gmxpaths('trjconv'),
 			'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 			'-o '+partfile.strip('.'+form)+'_slice.'+form,
 			('-pbc mol' if pbcmol else ''),
@@ -385,7 +388,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			cwd=cwd,inpipe=(None if selection != None else '0\n'))
 		#---save a gro file on the first part of the time slice
 		if ti == 0:
-			cmd = ' '.join(['trjconv',
+			cmd = ' '.join([gmxpaths('trjconv'),
 				'-f '+smx.simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
 				'-o '+final_name[:-4]+'.gro',
 				('-pbc mol' if pbcmol else ''),
@@ -399,7 +402,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 
 	#---concatenate the slices
 	slicefiles = [cwd+s[1].strip('.'+form)+'_slice.'+form for s in tl]
-	cmd = ' '.join(['trjcat',
+	cmd = ' '.join([gmxpaths('trjcat'),
 		'-f '+' '.join(slicefiles),
 		'-o '+final_name])
 	call(cmd,logfile='log-timeslice-trjcat-'+\

@@ -11,7 +11,8 @@ These tools aid in rapid development, debugging, and monitoring.
 
 #---imports 
 import sys,atexit,code,re
-import time, argparse,subprocess
+import time,subprocess
+import smx
 
 #---MONITORING FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
@@ -77,7 +78,9 @@ def status(string,start=None,i=None,looplen=None,blocked=False):
 	#---estimate the remaining time given a start time, loop length, and iterator
 	elif start != None and i != None and looplen != None and ('logfile' not in globals() or logfile == None):
 		esttime = (time.time()-start)/(float(i+1)/looplen)
-		print '\r'+string.ljust(20)+str(abs(round((esttime-(time.time()-start))/60.,1))).ljust(10)+\
+		print '\r'+string.ljust((20 if len(string)<= 20 else len(string)+5))+\
+			'  ...  '+str(i+1).rjust(7)+'/'+str(looplen).ljust(8)+\
+			str(abs(round((esttime-(time.time()-start))/60.,1))).ljust(5)+\
 			'minutes remain',
 		sys.stdout.flush()
 	#---standard output
@@ -85,7 +88,7 @@ def status(string,start=None,i=None,looplen=None,blocked=False):
 	
 def checktime():
 	'''Report the current time.'''
-	status('status: time = '+str(1./60*(time.time()-global_start_time))+' minutes')
+	status('status: time = %.2f'%(1./60*(time.time()-global_start_time))+' minutes')
 	
 def confirm():
 	'''Generic function to check with the user.'''
@@ -107,4 +110,12 @@ def regcheck(chopped,regex,split=None,num=1):
 	if num == None: return find
 	if len(find) != num: return -1
 	else: return (find[0] if num == 1 else find)
+	
+def get_setfiles(namepart):
+	"""
+	Return a settings file from the setfiles list that contains namepart.
+	"""
+	valid_names = [i for i in smx.setfiles if re.search(namepart,i)]
+	if len(valid_names) != 1: raise Exception('except: search failed '+str(valid_names))
+	else: return valid_names[0]
 
