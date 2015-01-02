@@ -147,7 +147,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 #---LOOKUPS
 #-------------------------------------------------------------------------------------------------------------
 	
-def get_slices(simname,groupname=None,timestamp=None,unique=True,pbcmol=False,wrap=None):
+def get_slices(simname,groupname=None,timestamp=None,unique=True,wrap=None):
 	
 	'''
 	Return all post-processed slices of a simulation.
