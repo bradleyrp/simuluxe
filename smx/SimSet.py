@@ -2,7 +2,7 @@
 '''A class which wraps data from a molecular dynamics simulation.'''
 
 import MDAnalysis
-from smx.codetools import *
+from smx import *
 
 class SimSet:
 

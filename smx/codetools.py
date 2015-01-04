@@ -12,7 +12,7 @@ These tools aid in rapid development, debugging, and monitoring.
 #---imports 
 import sys,atexit,code,re
 import time,subprocess
-import smx
+from smx import *
 
 #---MONITORING FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ def get_setfiles(namepart):
 	"""
 	Return a settings file from the setfiles list that contains namepart.
 	"""
-	valid_names = [i for i in smx.setfiles if re.search(namepart,i)]
+	valid_names = [i for i in setfiles if re.search(namepart,i)]
 	if len(valid_names) != 1: raise Exception('except: search failed '+str(valid_names))
 	else: return valid_names[0]
 

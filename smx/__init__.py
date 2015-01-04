@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-#---imports
-import os,sys
-
 #---conditional simuluxe imports
 import os
 if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
@@ -13,18 +10,14 @@ if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
 
 #---autocomplete and other bells and whistles
 if os.path.isfile('/etc/pythonstart'): execfile('/etc/pythonstart')
+elif os.path.isfile(os.path.expanduser('~/.pythonstart')): execfile(os.path.expanduser('~/.pythonstart'))
 
-#---universal library imports
-import numpy as np
-from numpy import array,shape
-try:
-	import matplotlib as mpl
-	import pylab as plt
-except: print 'matplotlib/pylab not found'
-
-#---import all submodules
-#---note it may be necessary to import explicitly
+#---load all submodules manually (note that sequence matters and this is safe but recursive)
 from codetools import *
+from SimSet import *
+from SimSetMembrane import *
 from treeparse import *
 from datastore import *
+from plotter import *
+from compute import *
 from io import *

@@ -4,7 +4,7 @@
 import os
 import numpy as np
 from numpy import array,shape
-from smx.codetools import *
+from smx import *
 
 missing_libxdr = \
 	"""

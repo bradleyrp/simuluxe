@@ -3,9 +3,7 @@
 #---imports
 from os.path import expanduser
 execfile(expanduser('~/.simuluxe_config.py'))
-from smx.simset import SimSet
-from smx.codetools import *
-import smx,controller
+from smx import*
 
 #---imports
 from numpy import *

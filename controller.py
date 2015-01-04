@@ -9,7 +9,6 @@ import re
 
 #---imports
 import smx
-from smx.codetools import niceblock,confirm
 
 helpstring = """
 	

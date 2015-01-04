@@ -5,15 +5,13 @@ from os.path import expanduser
 try: execfile(expanduser('~/.simuluxe_config.py'))
 except: print 'config file is absent'
 import smx
+from smx.codetools import *
 
 #---imports 
 import copy,glob
 import re,subprocess
 import numpy as np
 import datetime,time
-
-#---import codetools
-from codetools import *
 
 #---gromacs executable names
 def gmxpaths(pname): return pname+''
@@ -242,7 +240,7 @@ def avail(simname=None,slices=False,display=True):
 #-------------------------------------------------------------------------------------------------------------
 	
 def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None,
-	pbcmol=False):
+	pbcmol=False,wrap=None):
 
 	'''
 	Make a time slice.\n
@@ -251,6 +249,10 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	
 	if selection != None and extraname == '': 
 		raise Exception('must specify extraname for specific selection.')
+		
+	#---handle wrap keyword for consistency with get_slices
+	if wrap == 'pbcmol': pbcmol = True
+	elif wrap == None: pbcmol = False
 
 	#---note currently set to do one slice at a time
 	if type(step) == list and len(step) == 1 and len(step[0]) == 1: step = step[0][0]
@@ -410,4 +412,12 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	for s in slicefiles: 
 		print 'cleaning up '+str(s)
 		os.remove(s)
+		
+def get_predefined_atom_selection(simname,groupname,metadat,key_lipid_atoms):
+	return {
+		'ions':
+			' | '.join(['r '+metadat[simname][i] for i in ['ion_name_positive','ion_name_negative']]),
+		'keylipid':
+			' | '.join(['a '+i for i in key_lipid_atoms]),
+		}[groupname]
 

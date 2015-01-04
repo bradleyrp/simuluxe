@@ -4,8 +4,7 @@
 from os.path import expanduser
 try: execfile(expanduser('~/.simuluxe_config.py'))
 except: print 'config file is absent'
-from smx.codetools import *
-import smx,controller
+from smx import *
 
 #---imports 
 import os
