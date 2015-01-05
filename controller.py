@@ -7,9 +7,6 @@ import copy
 import json
 import re
 
-#---imports
-import smx
-
 helpstring = """
 	
 	SIMULUXE simulation analysis tools
@@ -77,6 +74,10 @@ initconfig = """#!/usr/bin/python
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
 
+def niceblock(text,newlines=False):
+	'''Remove tabs so that large multiline text doesn't awkwardly wrap in the code.'''
+	return re.sub('\n([\t])+',(' ' if not newlines else '\n'),re.sub('^\n([\t])+','',text))
+
 def docs(mods=None):
 
 	'''
@@ -111,6 +112,7 @@ def addpath(datapath=None):
 	'''
 
 	new = init_local_config()
+	import smx
 	if type(datapath) != list: datapath = [datapath]
 	for n in datapath:
 		fullpath = os.path.abspath(os.path.expanduser(n))
@@ -125,6 +127,7 @@ def addconfig(setfile=None):
 	'''
 	
 	new = init_local_config()
+	import smx
 	if type(setfile) != list: setfile = [setfile]
 	for n in setfile:
 		fullpath = os.path.abspath(os.path.expanduser(n))
@@ -142,6 +145,7 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False):
 	'''
 	
 	new = init_local_config()
+	import smx
 	#---note that checking time slices is only done via edr and the xtc/trr files are not consulted
 	spider = True if any([xtctime,trrtime,edrtime]) else False
 	infofile = os.path.abspath(os.path.expanduser(infofile))

@@ -14,8 +14,10 @@ import json
 import numpy
 import matplotlib as mpl
 import pylab as plt
-from PIL import Image
-from PIL import PngImagePlugin
+try:
+	from PIL import Image
+	from PIL import PngImagePlugin
+except: print 'missing python Image package'
 
 def store(obj,name,path,attrs=None):
 	"""
