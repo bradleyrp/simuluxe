@@ -14,6 +14,7 @@ elif os.path.isfile(os.path.expanduser('~/.pythonstart')): execfile(os.path.expa
 
 #---load all submodules manually (note that sequence matters and this is safe but recursive)
 from codetools import *
+from quickplot import *
 from SimSet import *
 from SimSetMembrane import *
 from treeparse import *
