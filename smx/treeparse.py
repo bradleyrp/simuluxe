@@ -182,7 +182,8 @@ def get_slices(simname,groupname=None,timestamp=None,unique=True,wrap=None):
 						slist.append((
 							rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
 							rootdir+'/'+simname+'/'+s['dir']+'/'+t))
-	if unique and len(slist) != 1: raise Exception('except: non-unique slices available: '+str(slist))
+	if unique and len(slist) != 1: raise Exception('except: non-unique slices available: '+\
+		'hint: did you forget to run "make update edrtime"?'+str(slist))
 	elif unique: return slist[0]
 	else: return slist
 			
@@ -195,7 +196,7 @@ def avail(simname=None,slices=False,display=True):
 	#---argument handling
 	if simname == None or simname == []: simname = smx.simdict.keys()
 	elif type(simname) == str: simname = [simname]
-
+	
 	#---result dictionary
 	listing = []
 	paths = {}
@@ -220,17 +221,18 @@ def avail(simname=None,slices=False,display=True):
 		for sn in simname:
 			dictlist.append(copy.deepcopy(smx.simdict[sn]))
 			thissim = dictlist[-1]
-			for step in [s for s in smx.simdict[sn]['steps'] if 'parts' in s.keys()]:
-				for part in step['parts']:
-					if 'edrstamp' in part and 'trr' in part:
-						ts = part['edrstamp'].split('-')
-						listing.append(part)
-						if display: 
-							print sn.ljust(40,'.')+step['dir'].ljust(30,'.')+part['edr'].ljust(30,'.')+\
-								re.sub('\s','.',re.compile(r'(\d)0+$').\
-									sub(r'\1',"%16f" % float(ts[0])).ljust(20,'.'))+\
-								re.sub('\s','.',re.compile(r'(\d)0+$').\
-									sub(r'\1',"%16f" % float(ts[1])))
+			if 'steps' in smx.simdict[sn].keys():
+				for step in [s for s in smx.simdict[sn]['steps'] if 'parts' in s.keys()]:
+					for part in step['parts']:
+						if 'edrstamp' in part and 'trr' in part:
+							ts = part['edrstamp'].split('-')
+							listing.append(part)
+							if display: 
+								print sn.ljust(40,'.')+step['dir'].ljust(30,'.')+part['edr'].ljust(30,'.')+\
+									re.sub('\s','.',re.compile(r'(\d)0+$').\
+										sub(r'\1',"%16f" % float(ts[0])).ljust(20,'.'))+\
+									re.sub('\s','.',re.compile(r'(\d)0+$').\
+										sub(r'\1',"%16f" % float(ts[1])))
 
 	#---print results but also return a dictionary
 	#---? development note: the returned listing needs more data to specify simname and step
@@ -296,8 +298,8 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	times_desired = np.arange(start,end+timestep,timestep)
 	if not len(times_desired)==len(times_observed) or \
 		not all([times_observed[i]==times_desired[i] for i in range(len(times_observed))]):
-		print 'observed = '+str(list(times_observed))
-		print 'desired = '+str(list(times_desired))
+		#print 'observed = '+str(list(times_observed))
+		#print 'desired = '+str(list(times_desired))
 		if abs(len(times_observed)-len(times_desired)) <=3:
 			print 'warning: timestamps not aligned but will try anyway (may be faulty edr file)'
 		else: print ('except: timestamps not aligned')

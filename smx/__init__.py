@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+print "[IMPORT] code-simuluxe/smx"
+
 #---conditional simuluxe imports
 import os
 if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):

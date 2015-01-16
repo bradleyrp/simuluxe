@@ -58,4 +58,16 @@ def loader(focus,headerdat):
 			name = 'postproc.'+compsign+'.'+ts+'.'+timestamp+'.dat'
 			datlist[ts] = smx.load(name,dropspot)
 	return datlist
+	
+def i2s(*items):
 
+	"""
+	Concisely join arguments in order to perform a lookup on an h5py dictionary when storing frames with
+	objects that might not equal numpy array sizes. Note that a quick test showed that storing many frames
+	with different sizes gave almost the exact same size on disk compared to loading a giant 1D array. The i2s 
+	function is particularly useful when storing e.g. the neighborlist and simplex list for different frames of
+	a bilayer simulation. In this case, the objects could be stored as "FRAME.MONO.neighborlist". We use the dot
+	because it cannot be found in a python variable name anyway.
+	"""
+
+	return '.'.join([str(i) for i in items])

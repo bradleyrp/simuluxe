@@ -168,7 +168,7 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False):
 			fp.write('\n')
 	if new or infofile not in smx.setfiles: addconfig(infofile)
 	reload(smx)
-
+	
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 
@@ -248,8 +248,11 @@ def makeface(arglist):
 		if a in argd['args']: arglist.remove(a)
 	if arglist != []: raise Exception('except: unprocessed arguments')
 
-	if argd['module_name'] == None and func != 'gitpush': target = globals()[func]
-	else: target = getattr(getattr(smx,argd['module_name']),func)
+	if argd['module_name'] == None and func != 'gitpush': 
+		target = globals()[func]
+	else: 
+		import smx
+		target = getattr(getattr(smx,argd['module_name']),func)
 	target(**kwargs)
 	return	
 
