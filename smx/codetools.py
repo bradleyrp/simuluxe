@@ -111,11 +111,14 @@ def regcheck(chopped,regex,split=None,num=1):
 	if len(find) != num: return -1
 	else: return (find[0] if num == 1 else find)
 	
-def get_setfiles(namepart):
+def get_setfiles(namepart,multi=False):
+
 	"""
 	Return a settings file from the setfiles list that contains namepart.
 	"""
+
 	valid_names = [i for i in setfiles if re.search(namepart,i)]
-	if len(valid_names) != 1: raise Exception('except: search failed '+str(valid_names))
+	if len(valid_names) != 1 and not multi: raise Exception('except: search failed '+str(valid_names))
+	elif multi: return valid_names
 	else: return valid_names[0]
 

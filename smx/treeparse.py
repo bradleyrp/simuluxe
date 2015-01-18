@@ -20,12 +20,12 @@ def gmxpaths(pname): return pname+''
 #-------------------------------------------------------------------------------------------------------------
 
 def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
-	spider=False,timecheck_types=None):
+	spider=False,timecheck_types=None,roots=None):
 
-	'''
+	"""
 	Parses all paths in datapaths to search for simulation data and returns a dictionary of base directories
 	and valid subdirectories (of the form "basename-vNUM/xNUM-descriptor" e.g. "membrane-v567/s8-sim".
-	'''
+	"""
 	
 	#--dictionary to hold simulation paths
 	simtree = dict()
@@ -37,9 +37,12 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	traj_suf = ['trr','xtc']
 
 	catted_re = r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)?(\.[a-z,A-Z,0-9,_]+)?\.?'
-
+	print "IN TREEPARSE" 
+	print datapaths
+	print roots
 	#---search all datapaths for simulations
-	for dp in datapaths:
+	if roots == None: roots = datapaths
+	for dp in roots:
 		tops = [f for f in os.listdir(dp+'/') for top in top_prefixes if re.search(r'^'+top+'\-v.+', f)]
 		for top in tops:
 			for (dirpath, dirnames, filenames) in os.walk(dp+'/'+top):
