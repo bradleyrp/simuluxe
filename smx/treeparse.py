@@ -37,9 +37,6 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	traj_suf = ['trr','xtc']
 
 	catted_re = r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)?(\.[a-z,A-Z,0-9,_]+)?\.?'
-	print "IN TREEPARSE" 
-	print datapaths
-	print roots
 	#---search all datapaths for simulations
 	if roots == None: roots = datapaths
 	for dp in roots:

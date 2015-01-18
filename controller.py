@@ -63,10 +63,10 @@ initconfig = """#!/usr/bin/python
 	#---SIMULUXE LOCAL CONFIG FILE
 	
 	#---datapaths is a list of directories to search for simulation data
-	datapaths = []
+	if 'datapaths' not in globals(): datapaths = []
 	
 	#---additional settings files to load
-	setfiles = []
+	if 'setfiles' not in globals(): setfiles = []
 	
 	#---location of the simuluxe execute scripts
 	"""
@@ -137,7 +137,7 @@ def addconfig(setfile=None):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			
-def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False):
+def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False,roots=None):
 
 	'''
 	Parse simulation data directories, load paths into a new configuration file, and check that it's in
@@ -150,16 +150,16 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False):
 	spider = True if any([xtctime,trrtime,edrtime]) else False
 	infofile = os.path.abspath(os.path.expanduser(infofile))
 	if os.path.isfile(infofile):
-		print 'simdict file exists at '+infofile+' but I will overwrite'
+		print '[NOTE] overwriting simdict file at '+infofile
 		if not sure and not confirm():
 			print 'cancel'
 			return
-	simdict = smx.findsims(spider=spider)
+	simdict = smx.findsims(spider=spider,roots=roots)
 	with open(infofile,'w') as fp:
 		#---note that we must define simdict here
 		#---...simuluxe will execute the files in datapaths to create smx.simdict
 		#---...execution of .simuluxe_config.py only loads paths while importing smx gets data
-		fp.write('#!/usr/bin/env python\n\nsimdict = {}\n')
+		fp.write('#!/usr/bin/env python\n\nif \'simdict\' not in globals(): simdict = {}\n')
 		for key in simdict.keys():
 			fp.write("simdict['"+key+"'] = \\\n")
 			formstring = json.dumps(simdict[key],indent=4)
