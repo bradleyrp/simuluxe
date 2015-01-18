@@ -48,7 +48,7 @@ def loader(focus,headerdat):
 	#---unload data from the header
 	compsign = headerdat['compsign']
 	dropspot = headerdat['dropspot']
-
+	
 	#---retrieve	
 	datlist = {}
 	for panel in focus:
