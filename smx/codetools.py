@@ -82,7 +82,8 @@ def status(string,start=None,i=None,looplen=None,blocked=False):
 			'  ...  '+str(i+1).rjust(7)+'/'+str(looplen).ljust(8)+\
 			str(abs(round((esttime-(time.time()-start))/60.,1))).ljust(5)+\
 			'minutes remain',
-		sys.stdout.flush()
+		if i!=looplen-1: sys.stdout.flush()
+		else: print '\n',
 	#---standard output
 	else: print string
 	

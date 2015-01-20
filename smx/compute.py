@@ -6,7 +6,7 @@ execfile(expanduser('~/.simuluxe_config.py'))
 from smx.codetools import *
 import smx
 
-def computer(focus,function,headerdat,get_slices=True):
+def computer(focus,function,headerdat,simdict,get_slices=True):
 	
 	"""
 	Universal procedure for running a function over simulation slices.
@@ -25,7 +25,7 @@ def computer(focus,function,headerdat,get_slices=True):
 			timestamp = focus[panel][ts]['time']
 			#---get slice information
 			if get_slices:
-				grofile,trajfile = smx.get_slices(ts,
+				grofile,trajfile = smx.get_slices(ts,simdict,
 					timestamp=timestamp,
 					wrap=calculations[compsign]['wrap'],
 					groupname=calculations[compsign]['groupname'])

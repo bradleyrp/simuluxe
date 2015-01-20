@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
 print "[IMPORT] code-simuluxe/smx"
+if 'project_name' in globals(): print "project_name = "+project_name
 #---conditional simuluxe imports
 import os
 if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):
+	#simdict = {}
 	execfile(os.path.expanduser('~/.simuluxe_config.py'))
-	simdict = {}
 	#---execute all configuration files on import
 	for setfile in setfiles: execfile(setfile)
 
@@ -23,4 +24,3 @@ from datastore import *
 from plotter import *
 from compute import *
 from io import *
-
