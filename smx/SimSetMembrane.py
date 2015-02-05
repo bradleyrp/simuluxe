@@ -11,7 +11,7 @@ import scipy
 
 class SimSetMembrane(SimSet):
 
-	def identify_monolayers(self,atomdirectors,startframeno=1):
+	def identify_monolayers_deprecated(self,atomdirectors,startframeno=1):
 		'''General monolayer identifier function. Needs: names of outer, inner atoms on lipids.'''
 		status('status: moving to frame '+str(startframeno))
 		status('status: identifying monolayers')
@@ -42,6 +42,68 @@ class SimSetMembrane(SimSet):
 			self.resids_reracker = []
 		if len(monos[0]) != len(monos[1]):
 			print 'warning: there is a difference in the number of lipids per monolayer'
+
+	def identify_monolayers(self,atomdirectors,startframeno=1):
+	
+		
+	
+		if 0:
+			#def identify_leaflets(self,start_frame=0):
+			findframe = array(self.traj[start_frame])
+			vecs = self.vecs[start_frame]
+			#---rewrap PBCs using the results of the iteration	
+			wrapper = self.topologize(findframe,vecs)
+			findframe = findframe + wrapper*array(vecs)
+			pd = [scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(findframe[:,d:d+1])) 
+				for d in range(3)]
+			pd3pbc = sqrt(sum(array([pd[d]-(pd[d]>vecs[d]/2.)*vecs[d]+(pd[d]<-1*vecs[d]/2.)*vecs[d] 
+				for d in range(3)])**2,axis=0))
+			nbors = transpose(where(pd3pbc<self.monolayer_cutoff))
+			nlist = [nbors[where(nbors[:,0]==i)[0],1] for i in range(self.nlipids)]
+			iref = 0
+			self.imono = zeros(self.nlipids)
+			searched = zeros(self.nlipids)
+			self.imono[iref],searched[iref] = 1,1
+			self.imono[nlist[iref]] = 1
+			while any(all((self.imono==1,searched==0),axis=0)):
+				for iref in where(all((self.imono==1,searched==0),axis=0))[0]: 
+					self.imono[nlist[iref]] = 1
+					searched[iref] = 1
+					
+			
+		
+		if 1:
+			'''General monolayer identifier function. Needs: names of outer, inner atoms on lipids.'''
+			status('status: moving to frame '+str(startframeno))
+			status('status: identifying monolayers')
+			self.gotoframe(startframeno)
+			pointouts = self.universe.selectAtoms(atomdirectors[0])
+			pointins = [self.universe.selectAtoms(atomdirectors[j]).coordinates() 
+				for j in range(1,len(atomdirectors))]
+			whichlayer = [0 if i > 0.0 else 1 for i in pointouts.coordinates()[:,2] - mean(pointins,axis=0)[:,2]]
+			monos = []
+			#---monos separates the lipids by absolute index into monolayers from index zero
+			monos.append([pointouts.resids()[i]-1 for i in range(len(whichlayer)) if whichlayer[i] == 0])
+			monos.append([pointouts.resids()[i]-1 for i in range(len(whichlayer)) if whichlayer[i] == 1])
+			#---monolayer rerack hack if some residue IDs are missing
+			#---Nb this may affect the tilter, mesher, identify_residues, and batch_gr functions so beware
+			if (max(monos[0]+monos[1])-min(monos[0]+monos[1])) != len(monos[0]+monos[1])-1:
+				print 'warning: resorting the monolayer indices because there is a mismatch'
+				#---reracker is a sorted list of all of the absolute indices
+				reracker = list(sort(monos[0]+monos[1]))
+				#---monos_rerack is a copy of reracker in relative indices which is separated into monolayers 
+				monos_rerack = [[reracker.index(i) for i in monos[m]] for m in range(2)]
+				self.monolayer_residues_abs = monos
+				#---resids_reracker is in absolute units
+				self.resids_reracker = reracker
+				#---monolayer_residues is in relative units
+				self.monolayer_residues = monos_rerack
+			else: 
+				self.monolayer_residues = monos
+				self.resids_reracker = []
+			if len(monos[0]) != len(monos[1]):
+				print 'warning: there is a difference in the number of lipids per monolayer'
+
 			
 	def identify_residues(self,selector):
 		'''General monolayer identifier function. Needs: names of outer, inner atoms on lipids.'''

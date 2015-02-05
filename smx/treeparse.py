@@ -239,12 +239,18 @@ def avail(simdict,simname=None,slices=False,display=True):
 #-------------------------------------------------------------------------------------------------------------
 	
 def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None,
-	pbcmol=False,wrap=None):
+	pbcmol=False,wrap=None,simdict=None,disable_timecheck=True,infofile=None):
 
 	'''
 	Make a time slice.\n
 	By default it writes the slice to the earliest step directory that holds the trajectory.
 	'''
+	
+	if infofile != None: 
+		get_simdict = {}
+		execfile(os.path.abspath(os.path.expanduser(infofile)),get_simdict)
+		simdict = get_simdict['simdict']
+	elif simdict == None: raise Exception('cannot locate simdict')
 	
 	if selection != None and extraname == '': 
 		raise Exception('must specify extraname for specific selection.')
@@ -260,7 +266,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 
 	#---unpack the timestamp
 	start,end,timestep = [int(i) for i in time.split('-')]
-
+	
 	#---generate timeline from relevant files
 	tl = []
 	stepnums = [j['dir'] for j in simdict[simname]['steps']].index(step)
@@ -280,7 +286,6 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 						else: t1 = int(seg[3]/timestep)*timestep
 						seg[2:4] = t0,t1
 						tl.append(seg)
-
 	#---check if the time span is big enough
 	if not any([j[2] <= start for j in tl]): print ('except: time segment runs too early')
 	if not any([j[3] >= end for j in tl]): print ('except: time segment runs too late')
@@ -295,8 +300,6 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	times_desired = np.arange(start,end+timestep,timestep)
 	if not len(times_desired)==len(times_observed) or \
 		not all([times_observed[i]==times_desired[i] for i in range(len(times_observed))]):
-		#print 'observed = '+str(list(times_observed))
-		#print 'desired = '+str(list(times_desired))
 		if abs(len(times_observed)-len(times_desired)) <=3:
 			print 'warning: timestamps not aligned but will try anyway (may be faulty edr file)'
 		else: print ('except: timestamps not aligned')
@@ -418,5 +421,6 @@ def get_predefined_atom_selection(simname,groupname,metadat,key_lipid_atoms):
 			' | '.join(['r '+metadat[simname][i] for i in ['ion_name_positive','ion_name_negative']]),
 		'keylipid':
 			' | '.join(['a '+i for i in key_lipid_atoms]),
+		'all':'all',
 		}[groupname]
 

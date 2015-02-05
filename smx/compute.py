@@ -6,7 +6,7 @@ execfile(expanduser('~/.simuluxe_config.py'))
 from smx.codetools import *
 import smx
 
-def computer(focus,function,headerdat,simdict,get_slices=True):
+def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 	
 	"""
 	Universal procedure for running a function over simulation slices.
@@ -36,7 +36,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True):
 			if not smx.lookup(name,dropspot):
 				status(' '.join(['[COMPUTE]',compsign,ts]))
 				result,attrs = function(simname=ts,grofile=grofile,trajfile=trajfile,
-					metadat=metadat,focus=focus,panel=panel)
+					metadat=metadat,focus=focus,panel=panel,**kwargs)
 				smx.store(result,name,dropspot,attrs=attrs)
 
 def loader(focus,headerdat):
