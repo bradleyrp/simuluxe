@@ -36,7 +36,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 			if not smx.lookup(name,dropspot):
 				status(' '.join(['[COMPUTE]',compsign,ts]))
 				result,attrs = function(simname=ts,grofile=grofile,trajfile=trajfile,
-					metadat=metadat,focus=focus,panel=panel,**kwargs)
+					metadat=metadat,focus=focus,panel=panel,headerdat=headerdat,**kwargs)
 				smx.store(result,name,dropspot,attrs=attrs)
 
 def loader(focus,headerdat):
