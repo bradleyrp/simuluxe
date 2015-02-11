@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 
-def generate_axes(nrows=1,ncols=1,figsize=None):
+def generate_axes(nrows=1,ncols=1,figsize=None,no_plot=None):
+	if no_plot == None: no_plot = []
 	fig = plt.figure(figsize=figsize)
 	gs = gridspec.GridSpec(nrows,ncols)
-	axes = [[fig.add_subplot(gs[r,c]) for c in range(ncols)] for r in range(nrows)]
+	axes = [[(fig.add_subplot(gs[r,c]) if [r,c] not in no_plot else None)
+		for c in range(ncols)] for r in range(nrows)]
 	return fig,gs,axes
 	
 def colorscale(name='RdBu',count=10,reverse=False):

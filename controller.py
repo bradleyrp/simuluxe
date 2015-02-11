@@ -166,7 +166,8 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False,r
 			for line in formstring.split('\n'):
 				fp.write('    '+line+'\n')
 			fp.write('\n')
-	if new or infofile not in smx.setfiles: addconfig(infofile)
+	#---note disabled "or infofile not in smx.setfiles" here to preserve distinct project namespaces
+	if new: addconfig(infofile)
 	reload(smx)
 	
 #---INTERFACE

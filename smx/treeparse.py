@@ -149,9 +149,8 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 	'''
 	Return all post-processed slices of a simulation.
 	'''
-	
 	slist = []
-	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.([a-z,A-Z,0-9,_]+)'+\
+	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_]+)?'+\
 		'\.?([a-z,A-Z,0-9,_]+)?\.[a-z]{3}'
 	for s in simdict[simname]['steps']:
 		rootdir = simdict[simname]['root']
@@ -160,15 +159,19 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 				if 'trajs_gro' in s.keys() and t[:-3]+'gro' in s['trajs_gro']:
 					add = False
 					regex = re.compile(re_group_timestamp)
-					if groupname == None and timestamp == None and wrap == None: add = True
+					groupname_none_all = (groupname==None or 
+						regex.match(t) and regex.findall(t)[3] == 'all')
+					#---no modifiers
+					if groupname_none_all and timestamp == None and wrap == None: add = True
+					#---group
 					elif groupname != None and timestamp == None and wrap == None:
 						if regex.match(t) and regex.findall(t)[3] == groupname: add = True
-					elif groupname == None and timestamp != None and wrap == None:
+					elif groupname_none_all and timestamp != None and wrap == None:
 						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp: add = True
 					elif groupname != None and timestamp != None and wrap == None:
 						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
 						'-'.join(regex.findall(t)[0][:3])==timestamp: add = True
-					elif groupname == None and timestamp != None and wrap != None:
+					elif groupname_none_all and timestamp != None and wrap != None:
 						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
 						regex.findall(t)[0][4] == wrap: add = True
 					elif groupname != None and timestamp != None and wrap != None:
@@ -179,8 +182,8 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 						slist.append((
 							rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
 							rootdir+'/'+simname+'/'+s['dir']+'/'+t))
-	if unique and len(slist) != 1: raise Exception('except: non-unique slices available: '+\
-		'hint: did you forget to run "make update edrtime"?'+str(slist))
+	if unique and len(slist) != 1: raise Exception('except: non-unique slices available:\n'+\
+		'hint: did you forget to run \n"make update edrtime"?\nslicelist = '+str(slist))
 	elif unique: return slist[0]
 	else: return slist
 			
@@ -345,7 +348,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	
 	#---check if file already exists
 	#---? check both gro and trajectory before continuing
-	if os.path.isfile(final_name) or os.path.isfile(final_name[:-4]+'.gro'): 
+	if os.path.isfile(final_name) and os.path.isfile(final_name[:-4]+'.gro'): 
 		print 'ignoring target file which exists: '+final_name
 		return
 
@@ -421,6 +424,6 @@ def get_predefined_atom_selection(simname,groupname,metadat,key_lipid_atoms):
 			' | '.join(['r '+metadat[simname][i] for i in ['ion_name_positive','ion_name_negative']]),
 		'keylipid':
 			' | '.join(['a '+i for i in key_lipid_atoms]),
-		'all':'all',
+		'all':None,
 		}[groupname]
 
