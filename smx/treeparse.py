@@ -320,7 +320,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			if re.match(regex,os.path.basename(i))]
 		#---search for numbered directory with the desired path
 		if any([i[1] == path for i in dirs]):
-			cwd = os.path.abspath(dirs[argsort([int(i[0]) for i in dirs])[-1]][2])
+			cwd = os.path.abspath(dirs[argsort([int(i[0]) for i in dirs if i[1] == path])[-1]][2])
 			storedir = cwd
 			final_name = cwd+outname
 		#---otherwise search for the path directly in case the user has supplied an explicit number
@@ -336,12 +336,15 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			else: startstep = 0
 			storedir = simdict[simname]['root']+'/'+simname+'/'+\
 				pathletter+str('%02d'%(startstep+1))+'-'+path
-		else: storedir = simdict[simname]['root']+'/'+simname+'/'+path
+			final_name = storedir+'/'+outname
+			cwd = storedir+'/'
+		else: 
+			storedir = simdict[simname]['root']+'/'+simname+'/'+path
+			final_name = storedir+'/'+outname
+			cwd = storedir+'/'
 		if not os.path.isdir(os.path.abspath(storedir)):
 			print 'making directory: '+str(os.path.abspath(storedir))
 			os.mkdir(os.path.abspath(storedir))
-		final_name = storedir+'/'+outname
-		cwd = storedir+'/'
 	else: 
 		final_name = simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname
 		cwd = simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'
@@ -419,6 +422,12 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		os.remove(s)
 		
 def get_predefined_atom_selection(simname,groupname,metadat,key_lipid_atoms):
+
+	"""
+	Deprecated function. Use the 'slice_select' item in the calculations dictionary or set 
+	groupname=None in that dictionary.
+	"""
+
 	return {
 		'ions':
 			' | '.join(['r '+metadat[simname][i] for i in ['ion_name_positive','ion_name_negative']]),
