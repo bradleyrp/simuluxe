@@ -318,11 +318,12 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		fulldirs = glob.glob(simdict[simname]['root']+'/'+simname+'/*')
 		dirs = [list(re.findall(regex,os.path.basename(i))[0])+[i] for i in fulldirs
 			if re.match(regex,os.path.basename(i))]
-		#---search for numbered directory with the desired path
-		if any([i[1] == path for i in dirs]):
-			cwd = os.path.abspath(dirs[argsort([int(i[0]) for i in dirs if i[1] == path])[-1]][2])
-			storedir = cwd
-			final_name = cwd+outname
+        #---search for numbered directory with the desired path
+        if any([i[1] == path for i in dirs]):
+            dirs_trim = [i for i in dirs if i[1] == path]
+            cwd = os.path.abspath(dirs_trim[argsort([int(i[0]) for i in dirs_trim])[-1]][2])
+            storedir = cwd
+            final_name = cwd+outname
 		#---otherwise search for the path directly in case the user has supplied an explicit number
 		elif not re.match(regex,path):
 			#---if the path is not already available we mkdir with a new sequential number
