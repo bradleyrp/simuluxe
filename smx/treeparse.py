@@ -160,12 +160,12 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 					add = False
 					regex = re.compile(re_group_timestamp)
 					groupname_none_all = (groupname==None or 
-						regex.match(t) and regex.findall(t)[3] == 'all')
+						regex.match(t) and regex.findall(t)[0][3] == 'all')
 					#---no modifiers
 					if groupname_none_all and timestamp == None and wrap == None: add = True
 					#---group
 					elif groupname != None and timestamp == None and wrap == None:
-						if regex.match(t) and regex.findall(t)[3] == groupname: add = True
+						if regex.match(t) and regex.findall(t)[0][3] == groupname: add = True
 					elif groupname_none_all and timestamp != None and wrap == None:
 						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp: add = True
 					elif groupname != None and timestamp != None and wrap == None:
@@ -321,7 +321,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		#---search for numbered directory with the desired path
 		if any([i[1] == path for i in dirs]):
 			dirs_trim = [i for i in dirs if i[1] == path]
-			cwd = os.path.abspath(dirs_trim[argsort([int(i[0]) for i in dirs_trim])[-1]][2])
+			cwd = os.path.abspath(dirs_trim[argsort([int(i[0]) for i in dirs_trim])[-1]][2])+'/'
 			storedir = cwd
 			final_name = cwd+outname
 		#---otherwise search for the path directly in case the user has supplied an explicit number
@@ -381,38 +381,42 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	print 'time slices = '+str(tl)
 	
 	#---make individual slices
+	tl_trimmed = []
 	for ti in range(len(tl)):
-		stepdir,partfile,start,end,timestep = tl[ti]
-		cmd = ' '.join([gmxpaths('trjconv'),
-			'-f '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
-			'-o '+partfile.strip('.'+form)+'_slice.'+form,
-			('-pbc mol' if pbcmol else ''),
-			('-n index-'+extraname+'.ndx' if selection != None else ''),
-			('-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
-				if selection != None or pbcmol else ''),
-			'-b '+str(start),
-			'-e '+str(end),
-			'-dt '+str(timestep)])
-		print "Running " + cmd
-		print cwd
-		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
-			cwd=cwd,inpipe=(None if selection != None else '0\n'))
-		#---save a gro file on the first part of the time slice
-		if ti == 0:
+		#---skip any slices that go backwards
+		if tl[ti][2]<=tl[ti][3]: 
+			tl_trimmed.append(tl[ti])
+			stepdir,partfile,start,end,timestep = tl[ti]
 			cmd = ' '.join([gmxpaths('trjconv'),
 				'-f '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
-				'-o '+final_name[:-4]+'.gro',
+				'-o '+partfile.strip('.'+form)+'_slice.'+form,
 				('-pbc mol' if pbcmol else ''),
 				('-n index-'+extraname+'.ndx' if selection != None else ''),
-				'-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
+				('-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
+					if selection != None or pbcmol else ''),
 				'-b '+str(start),
-				'-e '+str(start),
+				'-e '+str(end),
 				'-dt '+str(timestep)])
-			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro.log',
-                cwd=cwd,inpipe=(None if selection != None else '0\n'))
+			print "Running " + cmd
+			print cwd
+			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
+				cwd=cwd,inpipe=(None if selection != None else '0\n'))
+			#---save a gro file on the first part of the time slice
+			if ti == 0:
+				cmd = ' '.join([gmxpaths('trjconv'),
+					'-f '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile,
+					'-o '+final_name[:-4]+'.gro',
+					('-pbc mol' if pbcmol else ''),
+					('-n index-'+extraname+'.ndx' if selection != None else ''),
+					'-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
+					'-b '+str(start),
+					'-e '+str(start),
+					'-dt '+str(timestep)])
+				call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro.log',
+		            cwd=cwd,inpipe=(None if selection != None else '0\n'))
 
 	#---concatenate the slices
-	slicefiles = [cwd+s[1].strip('.'+form)+'_slice.'+form for s in tl]
+	slicefiles = [cwd+s[1].strip('.'+form)+'_slice.'+form for s in tl_trimmed]
 	cmd = ' '.join([gmxpaths('trjcat'),
 		'-f '+' '.join(slicefiles),
 		'-o '+final_name])
