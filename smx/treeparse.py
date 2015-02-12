@@ -152,6 +152,8 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 	slist = []
 	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_]+)?'+\
 		'\.?([a-z,A-Z,0-9,_]+)?\.[a-z]{3}'
+	status('[CHECK] searching for slice: '+', '.join([key+' = '+str(locals()[key]) for key in 
+		['simname','timestamp','wrap','groupname']]))
 	for s in simdict[simname]['steps']:
 		rootdir = simdict[simname]['root']
 		if 'trajs' in s.keys():
@@ -183,7 +185,7 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 							rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
 							rootdir+'/'+simname+'/'+s['dir']+'/'+t))
 	if unique and len(slist) != 1: raise Exception('except: non-unique slices available:\n'+\
-		'hint: did you forget to run \n"make update edrtime"?\nslicelist = '+str(slist))
+		'hint: did you forget to run \n"make update edrtime"?\nslice list = '+str(slist))
 	elif unique: return slist[0]
 	else: return slist
 			
@@ -361,11 +363,12 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		#---if selection is a string we assume it is in make_ndx syntax
 		#---if selection is a dict with an 'atoms' entry, we reformat it for make_ndx
 		if type(selection)==dict:
-			selection_string = ''
+			selection_string = []
 			if 'atoms' in selection.keys():
-				selection_string += ' | '.join(['a '+i for i in selection['atoms']])
+				selection_string.append(' | '.join(['a '+i for i in selection['atoms']]))
 			if 'residues' in selection.keys():
-				selection_string += ' | '.join(['r '+i for i in selection['residues']])
+				selection_string.append(' | '.join(['r '+i for i in selection['residues']]))
+			selection_string = ' | '.join(selection_string)
 			if selection_string == '':
 				raise Exception('unclear selection dictionary for make_ndx: '+str(selection))
 			selection = selection_string

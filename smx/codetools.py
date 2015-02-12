@@ -91,8 +91,9 @@ def checktime():
 	'''Report the current time.'''
 	status('status: time = %.2f'%(1./60*(time.time()-global_start_time))+' minutes')
 	
-def confirm():
+def confirm(message=None):
 	'''Generic function to check with the user.'''
+	if message != None: status(message)
 	go = True if raw_input("%s (y/N) " % 'continue?').lower() == 'y' else False
 	if not go:
 		print 'aborting' 
