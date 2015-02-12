@@ -310,7 +310,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---default final file is in the directory of the first relevant trajectory file
 	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i)
 		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+\
-		('.'+extraname if extraname != '' else '')+\
+		('.'+extraname if extraname not in ['',None] else '')+\
 		('.pbcmol' if pbcmol else '')+'.'+form
 	if path != None:
 		if pathletter == None: regex = '^[a-z]([0-9]{1,2})-(.+)'
@@ -358,6 +358,18 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 
 	#---generate system.gro file for the full system
 	if selection != None:
+		#---if selection is a string we assume it is in make_ndx syntax
+		#---if selection is a dict with an 'atoms' entry, we reformat it for make_ndx
+		if type(selection)==dict:
+			selection_string = ''
+			if 'atoms' in selection.keys():
+				selection_string += ' | '.join(['a '+i for i in selection['atoms']])
+			if 'residues' in selection.keys():
+				selection_string += ' | '.join(['r '+i for i in selection['residues']])
+			if selection_string == '':
+				raise Exception('unclear selection dictionary for make_ndx: '+str(selection))
+			selection = selection_string
+		print 'make_ndx selection = "'+selection+'"'
 		stepdir,partfile,start,end,timestep = tl[0]
 		systemgro = final_name[:-4]+'.'+extraname+'.gro'
 		cmd = ' '.join([gmxpaths('trjconv'),
@@ -425,19 +437,4 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	for s in slicefiles: 
 		print 'cleaning up '+str(s)
 		os.remove(s)
-		
-def get_predefined_atom_selection(simname,groupname,metadat,key_lipid_atoms):
-
-	"""
-	Deprecated function. Use the 'slice_select' item in the calculations dictionary or set 
-	groupname=None in that dictionary.
-	"""
-
-	return {
-		'ions':
-			' | '.join(['r '+metadat[simname][i] for i in ['ion_name_positive','ion_name_negative']]),
-		'keylipid':
-			' | '.join(['a '+i for i in key_lipid_atoms]),
-		'all':None,
-		}[groupname]
 
