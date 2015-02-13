@@ -244,7 +244,7 @@ def avail(simdict,simname=None,slices=False,display=True):
 #-------------------------------------------------------------------------------------------------------------
 	
 def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None,
-	pbcmol=False,wrap=None,simdict=None,disable_timecheck=True,infofile=None):
+	pbcmol=False,wrap=None,simdict=None,disable_timecheck=True,infofile=None,metadat=None):
 
 	'''
 	Make a time slice.\n
@@ -257,7 +257,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		simdict = get_simdict['simdict']
 	elif simdict == None: raise Exception('cannot locate simdict')
 	
-	if selection != None and extraname == '': 
+	if selection != None and extraname == ['','all',None]: 
 		raise Exception('must specify extraname for specific selection.')
 		
 	#---handle wrap keyword for consistency with get_slices
@@ -368,6 +368,10 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 				selection_string.append(' | '.join(['a '+i for i in selection['atoms']]))
 			if 'residues' in selection.keys():
 				selection_string.append(' | '.join(['r '+i for i in selection['residues']]))
+			if 'atoms_from_meta' in selection.keys() and metadat!=None:
+				selection_string.append(' | '.join(['a '+i for i in selection['atoms_from_meta']]))
+			elif 'atoms_from_meta' in selection.keys() and metadat==None:
+				raise Exception('cannot find metadat to determine atom types')
 			selection_string = ' | '.join(selection_string)
 			if selection_string == '':
 				raise Exception('unclear selection dictionary for make_ndx: '+str(selection))
