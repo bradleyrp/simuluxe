@@ -369,7 +369,8 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			if 'residues' in selection.keys():
 				selection_string.append(' | '.join(['r '+i for i in selection['residues']]))
 			if 'atoms_from_meta' in selection.keys() and metadat!=None:
-				selection_string.append(' | '.join(['a '+i for i in selection['atoms_from_meta']]))
+				selection_string.append(' | '.join(['a '+i for i in 
+					metadat[j] for j in selection['atoms_from_meta']]))
 			elif 'atoms_from_meta' in selection.keys() and metadat==None:
 				raise Exception('cannot find metadat to determine atom types')
 			selection_string = ' | '.join(selection_string)
