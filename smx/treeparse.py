@@ -161,7 +161,7 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 				if 'trajs_gro' in s.keys() and t[:-3]+'gro' in s['trajs_gro']:
 					add = False
 					regex = re.compile(re_group_timestamp)
-					specgroup = groupname in ['all','',None]
+					specgroup = not groupname in ['all','',None]
 					#---no modifiers
 					if not specgroup and timestamp == None and wrap == None: add = True
 					#---group
