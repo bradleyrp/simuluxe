@@ -256,7 +256,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		simdict = get_simdict['simdict']
 	elif simdict == None: raise Exception('cannot locate simdict')
 	
-	if selection != None and extraname == ['','all',None]: 
+	if selection != None and extraname in ['','all',None]: 
 		raise Exception('must specify extraname for specific selection.')
 		
 	#---handle wrap keyword for consistency with get_slices
@@ -368,8 +368,8 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			if 'residues' in selection.keys():
 				selection_string.append(' | '.join(['r '+i for i in selection['residues']]))
 			if 'atoms_from_meta' in selection.keys() and metadat!=None:
-				selection_string.append(' | '.join(['a '+i for i in 
-					metadat[j] for j in selection['atoms_from_meta']]))
+				selection_string.append(' | '.join(['a '+i for j in selection['atoms_from_meta'] 
+					for i in metadat[simname][j]]))
 			elif 'atoms_from_meta' in selection.keys() and metadat==None:
 				raise Exception('cannot find metadat to determine atom types')
 			selection_string = ' | '.join(selection_string)
