@@ -161,22 +161,21 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 				if 'trajs_gro' in s.keys() and t[:-3]+'gro' in s['trajs_gro']:
 					add = False
 					regex = re.compile(re_group_timestamp)
-					groupname_none_all = (groupname==None or 
-						regex.match(t) and regex.findall(t)[0][3] == 'all')
+					specgroup = groupname in ['all','',None]
 					#---no modifiers
-					if groupname_none_all and timestamp == None and wrap == None: add = True
+					if not specgroup and timestamp == None and wrap == None: add = True
 					#---group
-					elif groupname != None and timestamp == None and wrap == None:
+					elif specgroup and timestamp == None and wrap == None:
 						if regex.match(t) and regex.findall(t)[0][3] == groupname: add = True
-					elif groupname_none_all and timestamp != None and wrap == None:
+					elif not specgroup and timestamp != None and wrap == None:
 						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp: add = True
-					elif groupname != None and timestamp != None and wrap == None:
+					elif specgroup and timestamp != None and wrap == None:
 						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
 						'-'.join(regex.findall(t)[0][:3])==timestamp: add = True
-					elif groupname_none_all and timestamp != None and wrap != None:
+					elif not specgroup and timestamp != None and wrap != None:
 						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
 						regex.findall(t)[0][4] == wrap: add = True
-					elif groupname != None and timestamp != None and wrap != None:
+					elif specgroup and timestamp != None and wrap != None:
 						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
 						'-'.join(regex.findall(t)[0][:3])==timestamp and \
 						regex.findall(t)[0][4] == wrap: add = True
@@ -357,7 +356,8 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	if os.path.isfile(final_name) and os.path.isfile(final_name[:-4]+'.gro'): 
 		print 'ignoring target file which exists: '+final_name
 		return
-
+	print simdict[simname]
+	raw_input('fdsafas')
 	#---generate system.gro file for the full system
 	if selection != None:
 		#---if selection is a string we assume it is in make_ndx syntax
