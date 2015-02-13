@@ -356,8 +356,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	if os.path.isfile(final_name) and os.path.isfile(final_name[:-4]+'.gro'): 
 		print 'ignoring target file which exists: '+final_name
 		return
-	print simdict[simname]
-	raw_input('fdsafas')
+
 	#---generate system.gro file for the full system
 	if selection != None:
 		#---if selection is a string we assume it is in make_ndx syntax
