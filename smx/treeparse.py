@@ -35,7 +35,8 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	if key_files == None: key_files = ['system.gro','system-input.gro']
 	traj_suf = ['trr','xtc']
 
-	catted_re = r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_]+)?(\.[a-z,A-Z,0-9,_]+)?\.?'
+	catted_re = \
+		r'^md\.part[0-9]{4}\.[0-9]+\-[0-9]+\-[0-9]+(\.[a-z,A-Z,0-9,_,-]+)?(\.[a-z,A-Z,0-9,_,-]+)?\.?'
 	#---search all datapaths for simulations
 	if roots == None: roots = datapaths
 	for dp in roots:
@@ -150,8 +151,8 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 	Return all post-processed slices of a simulation.
 	'''
 	slist = []
-	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_]+)?'+\
-		'\.?([a-z,A-Z,0-9,_]+)?\.[a-z]{3}'
+	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_,-]+)?'+\
+		'\.?([a-z,A-Z,0-9,_,-]+)?\.[a-z]{3}'
 	status('[CHECK] searching for slice: '+', '.join([key+' = '+str(locals()[key]) for key in 
 		['simname','timestamp','wrap','groupname']]))
 	for s in simdict[simname]['steps']:
