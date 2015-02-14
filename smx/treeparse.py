@@ -164,26 +164,27 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 					regex = re.compile(re_group_timestamp)
 					specgroup = not groupname in ['all','',None]
 					#---no modifiers
-					if not specgroup and timestamp == None and wrap == None: add = True
+					if not specgroup and timestamp == None and wrap == None:
+						if regex.findall(t)[0][3] in ['all','',None]: add = True
 					#---group
 					elif specgroup and timestamp == None and wrap == None:
 						if regex.match(t) and regex.findall(t)[0][3] == groupname: add = True
 					elif not specgroup and timestamp != None and wrap == None:
-						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp: add = True
+						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
+							regex.findall(t)[0][3] in ['all','',None]: add = True
 					elif specgroup and timestamp != None and wrap == None:
 						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
 						'-'.join(regex.findall(t)[0][:3])==timestamp: add = True
 					elif not specgroup and timestamp != None and wrap != None:
 						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
-						regex.findall(t)[0][4] == wrap: add = True
+						regex.findall(t)[0][4] == wrap and regex.findall(t)[0][3] in ['all','',None]:
+							add = True
 					elif specgroup and timestamp != None and wrap != None:
 						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
 						'-'.join(regex.findall(t)[0][:3])==timestamp and \
 						regex.findall(t)[0][4] == wrap: add = True
-					if add: 
-						slist.append((
-							rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
-							rootdir+'/'+simname+'/'+s['dir']+'/'+t))
+					if add: slist.append((rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
+						rootdir+'/'+simname+'/'+s['dir']+'/'+t))
 	if unique and len(slist) != 1: raise Exception('except: non-unique slices available:\n'+\
 		'hint: did you forget to run \n"make update edrtime"?\nslice list = '+str(slist))
 	elif unique: return slist[0]
