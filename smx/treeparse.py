@@ -190,57 +190,6 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 	elif unique: return slist[0]
 	else: return slist
 			
-def avail(simdict,simname=None,slices=False,display=True):
-	
-	'''
-	List available time slices for a simulation according to its root name.
-	'''
-
-	#---argument handling
-	if simname == None or simname == []: simname = simdict.keys()
-	elif type(simname) == str: simname = [simname]
-	
-	#---result dictionary
-	listing = []
-	paths = {}
-	if slices:
-		#---specifically list the prepared slices
-		for sn in simname:
-			paths_sim = {}
-			if 'steps' in simdict[sn].keys():
-				for step in simdict[sn]['steps'][::-1]:
-					if 'trajs' in step.keys():
-						paths_sim['trajs'] = []
-						for traj in step['trajs']:
-							if display:
-								print sn.ljust(30,'.')+step['dir'].ljust(20,'.')+traj.ljust(30)
-							paths_sim['trajs'].append(sn+'/'+step['dir']+'/'+traj)							
-					if 'key_files' in step.keys() and 'gro' not in paths_sim.keys():
-						paths_sim['gro'] = sn+'/'+step['dir']+'/'+step['key_files'][0]
-			if paths_sim != {}: paths[sn] = copy.deepcopy(paths_sim)
-	else:
-		#---list slices according to time slices
-		dictlist = []
-		for sn in simname:
-			dictlist.append(copy.deepcopy(simdict[sn]))
-			thissim = dictlist[-1]
-			if 'steps' in simdict[sn].keys():
-				for step in [s for s in simdict[sn]['steps'] if 'parts' in s.keys()]:
-					for part in step['parts']:
-						if 'edrstamp' in part and 'trr' in part:
-							ts = part['edrstamp'].split('-')
-							listing.append(part)
-							if display: 
-								print sn.ljust(40,'.')+step['dir'].ljust(30,'.')+part['edr'].ljust(30,'.')+\
-									re.sub('\s','.',re.compile(r'(\d)0+$').\
-										sub(r'\1',"%16f" % float(ts[0])).ljust(20,'.'))+\
-									re.sub('\s','.',re.compile(r'(\d)0+$').\
-										sub(r'\1',"%16f" % float(ts[1])))
-
-	#---print results but also return a dictionary
-	#---? development note: the returned listing needs more data to specify simname and step
-	return paths
-	
 #---TIME SLICE
 #-------------------------------------------------------------------------------------------------------------
 	
@@ -268,7 +217,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---note currently set to do one slice at a time
 	if type(step) == list and len(step) == 1 and len(step[0]) == 1: step = step[0][0]
 	if type(simname) == list and len(simname) == 1: simname = simname[0]
-	elif type(simname) == list and len(simname) != 1: print ('except: invalid selections')
+	elif type(simname) == list and len(simname) != 1: status('[WARNING] invalid selections')
 
 	#---unpack the timestamp
 	start,end,timestep = [int(i) for i in time.split('-')]
@@ -292,9 +241,11 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 						else: t1 = int(seg[3]/timestep)*timestep
 						seg[2:4] = t0,t1
 						tl.append(seg)
+						
+	status('[REPORT] timeline = '+str(tl))
 	#---check if the time span is big enough
-	if not any([j[2] <= start for j in tl]): print ('except: time segment runs too early')
-	if not any([j[3] >= end for j in tl]): print ('except: time segment runs too late')
+	if not any([j[2] <= start for j in tl]): status('[WARNING] time segment runs too early')
+	if not any([j[3] >= end for j in tl]): status('[WARNING] time segment runs too late')
 
 	#---in some edge cases the simulation starts from an earlier time so we use the more recent slice
 	for i in range(len(tl)-1):
@@ -307,8 +258,8 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	if not len(times_desired)==len(times_observed) or \
 		not all([times_observed[i]==times_desired[i] for i in range(len(times_observed))]):
 		if abs(len(times_observed)-len(times_desired)) <=3:
-			print 'warning: timestamps not aligned but will try anyway (may be faulty edr file)'
-		else: print ('except: timestamps not aligned')
+			status('[WARNING] timestamps not aligned but will try anyway (may be faulty edr file)')
+		else: status('[WARNING] timestamps not aligned')
 		
 	#---default final file is in the directory of the first relevant trajectory file
 	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i)
@@ -347,7 +298,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			final_name = storedir+'/'+outname
 			cwd = storedir+'/'
 		if not os.path.isdir(os.path.abspath(storedir)):
-			print 'making directory: '+str(os.path.abspath(storedir))
+			status('[STATUS] making directory: '+str(os.path.abspath(storedir)))
 			os.mkdir(os.path.abspath(storedir))
 	else: 
 		final_name = simdict[simname]['root']+'/'+simname+'/'+tl[0][0]+'/'+outname
@@ -356,7 +307,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---check if file already exists
 	#---? check both gro and trajectory before continuing
 	if os.path.isfile(final_name) and os.path.isfile(final_name[:-4]+'.gro'): 
-		print 'ignoring target file which exists: '+final_name
+		status('[REPORT] ignoring target because it already exists: '+final_name)
 		return
 
 	#---generate system.gro file for the full system
@@ -378,7 +329,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			if selection_string == '':
 				raise Exception('unclear selection dictionary for make_ndx: '+str(selection))
 			selection = selection_string
-		print 'make_ndx selection = "'+selection+'"'
+		status('[REPORT] make_ndx selection = "'+selection+'"')
 		stepdir,partfile,start,end,timestep = tl[0]
 		systemgro = final_name[:-4]+'.'+extraname+'.gro'
 		cmd = ' '.join([gmxpaths('trjconv'),
@@ -399,7 +350,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		os.remove(systemgro)
 	
 	#---report
-	print 'time slices = '+str(tl)
+	status('[REPORT] time slices = '+str(tl))
 	
 	#---make individual slices
 	tl_trimmed = []
@@ -418,8 +369,6 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 				'-b '+str(start),
 				'-e '+str(end),
 				'-dt '+str(timestep)])
-			print "Running " + cmd
-			print cwd
 			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
 				cwd=cwd,inpipe=(None if selection != None else '0\n'))
 			#---save a gro file on the first part of the time slice
@@ -444,6 +393,6 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	call(cmd,logfile='log-timeslice-trjcat-'+\
 		'-'.join([str(i) for i in [start,end,timestep]])+'.log',cwd=cwd)
 	for s in slicefiles: 
-		print 'cleaning up '+str(s)
+		status('[STATUS] cleaning up '+str(s))
 		os.remove(s)
 

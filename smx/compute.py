@@ -60,11 +60,15 @@ def loader(focus,headerdat):
 	#---retrieve	
 	datlist = {}
 	for panel in focus:
-		for ts in focus[panel]:
-			status(' '.join(['[CHECK]',compsign,ts]))
-			timestamp = focus[panel][ts]['time']	
-			name = 'postproc.'+compsign+'.'+ts+'.'+timestamp+'.dat'
-			datlist[ts] = smx.load(name,dropspot)
+		for sn in focus[panel]:
+			status(' '.join(['[LOAD]',compsign,sn]))
+			if type(focus[panel][sn])==list:
+				for ts in focus[panel][sn]:
+					name = 'postproc.'+compsign+'.'+sn+'.'+ts['time']+'.dat'
+					datlist[(sn,ts['time'])] = smx.load(name,dropspot)
+			else: 
+				name = 'postproc.'+compsign+'.'+sn+'.'+focus[panel][sn]['time']+'.dat'
+				datlist[sn] = smx.load(name,dropspot)
 	return datlist
 	
 def i2s(*items):
