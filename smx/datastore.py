@@ -46,7 +46,8 @@ def load(name,path):
 	path = os.path.abspath(os.path.expanduser(path))
 	data = {}
 	rawdat = h5py.File(path+'/'+name,'r')
-	for key in rawdat.keys(): data[key] = numpy.array(rawdat[key])
+	for key in [i for i in rawdat if i!='meta']: 
+		data[key] = numpy.array(rawdat[key])
 	attrs = json.loads(rawdat['meta'].value)
 	for key in attrs: data[key] = attrs[key]
 	rawdat.close()

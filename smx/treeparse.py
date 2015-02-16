@@ -260,7 +260,9 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		if abs(len(times_observed)-len(times_desired)) <=3:
 			status('[WARNING] timestamps not aligned but will try anyway (may be faulty edr file)')
 		else: status('[WARNING] timestamps not aligned')
-		
+	for ti,t in enumerate(tl[:-1]):
+		if tl[ti+1][2] <= tl[ti][3]: tl[ti+1][2] = tl[ti][3]+tl[ti][4]
+
 	#---default final file is in the directory of the first relevant trajectory file
 	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i)
 		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+\
