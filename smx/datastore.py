@@ -28,7 +28,9 @@ def store(obj,name,path,attrs=None):
 	path = os.path.abspath(os.path.expanduser(path))
 	if not os.path.isdir(path): os.mkdir(path)
 	fobj = h5py.File(path+'/'+name,'w')
-	for key in obj.keys(): dset = fobj.create_dataset(key,data=obj[key])
+	for key in obj.keys(): 
+		if 0: print '[WRITING] '+key
+		dset = fobj.create_dataset(key,data=obj[key])
 	if attrs != None: fobj.create_dataset('meta',data=numpy.string_(json.dumps(attrs)))
 	fobj.close()
 	
