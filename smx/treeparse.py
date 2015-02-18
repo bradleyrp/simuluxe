@@ -145,14 +145,13 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 #---LOOKUPS
 #-------------------------------------------------------------------------------------------------------------
 	
-def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=None):
+def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=None,**kwargs):
 	
 	'''
 	Return all post-processed slices of a simulation.
 	'''
 	slist = []
-	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_,-]+)?'+\
-		'\.?([a-z,A-Z,0-9,_,-]+)?\.[a-z]{3}'
+	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_,-]+)?'+'\.?([a-z,A-Z,0-9,_,-]+)?\.[a-z]{3}'
 	status('[CHECK] searching for slice: '+', '.join([key+' = '+str(locals()[key]) for key in 
 		['simname','timestamp','wrap','groupname']]))
 	for s in simdict[simname]['steps']:

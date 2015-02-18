@@ -41,7 +41,7 @@ def lookup(name,path):
 	path = os.path.abspath(os.path.expanduser(path))
 	return os.path.isfile(path+'/'+name)
 
-def load(name,path):
+def load(name,path,verbose=False):
 	"""
 	Load an h5py datastore.
 	"""
@@ -49,6 +49,9 @@ def load(name,path):
 	data = {}
 	rawdat = h5py.File(path+'/'+name,'r')
 	for key in [i for i in rawdat if i!='meta']: 
+		if verbose:
+			print '[READ] '+key
+			print '[READ] object = '+str(rawdat[key])
 		data[key] = numpy.array(rawdat[key])
 	attrs = json.loads(rawdat['meta'].value)
 	for key in attrs: data[key] = attrs[key]

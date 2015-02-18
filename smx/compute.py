@@ -43,7 +43,6 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 				#---get unique filename (we omit step designations and this requires non-redundant times)
 				#---we also drop any descriptors after the three-digit code
 				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
-				print "CHOP "+sn_chop
 				name = 'postproc.'+compsign+'.'+sn_chop+'.'+timestamp['time']+'.dat'
 				#---check the repo and if absent compute and store the result
 				if not smx.lookup(name,dropspot):
@@ -71,7 +70,6 @@ def loader(focus,headerdat):
 				for ts in focus[panel][sn]:
 					datlist_parted = {}
 					sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
-					print "CHOP "+sn_chop
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+ts['time']+'.dat'
 					datlist_parted[(sn,ts['time'])] = smx.load(name,dropspot)
 					datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
