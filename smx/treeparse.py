@@ -113,6 +113,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 										[starttime,starttime+nframes*timestep,timestep]]))
 
 						#---grab key files
+				
 						for kf in key_files:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) if fn == kf]
 							if valids != []: simtree[top]['steps'][stepnum]['key_files'] = list(valids)
@@ -147,9 +148,10 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	
 def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=None,**kwargs):
 	
-	'''
+	"""
 	Return all post-processed slices of a simulation.
-	'''
+	"""
+	
 	slist = []
 	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)\.?([a-z,A-Z,0-9,_,-]+)?'+'\.?([a-z,A-Z,0-9,_,-]+)?\.[a-z]{3}'
 	status('[CHECK] searching for slice: '+', '.join([key+' = '+str(locals()[key]) for key in 
@@ -195,10 +197,10 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=No
 def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None,
 	pbcmol=False,wrap=None,simdict=None,disable_timecheck=True,infofile=None,metadat=None):
 
-	'''
+	"""
 	Make a time slice.\n
 	By default it writes the slice to the earliest step directory that holds the trajectory.
-	'''
+	"""
 	
 	if infofile != None: 
 		get_simdict = {}

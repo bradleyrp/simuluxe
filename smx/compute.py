@@ -51,15 +51,29 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 						metadat=metadat,focus=focus,panel=panel,headerdat=headerdat,**kwargs)
 					smx.store(result,name,dropspot,attrs=attrs)
 
-def loader(focus,headerdat):
+def loader(focus,headerdat,sn=None,compsign=None):
 
 	"""
 	Universal procedure for unloading saved postprocessing data from the dropspot.
 	"""
+	
+	if sn != None:
+		focus = [dict([(sn,dict([(sn,focus[f][sn])]))]) 
+		for f in focus if sn in focus[f]][0]
 
 	#---unload data from the header
-	compsign = headerdat['compsign']
 	dropspot = headerdat['dropspot']
+	
+	#---alternate compsigns allow for multiple data objects
+	#---check that these objects came from the same timeslices
+	if compsign == None: compsign = headerdat['compsign']
+	else:
+		status('[LOAD] alternate compsign = '+compsign+' with '+headerdat['compsign'])
+		if not headerdat['calculations'][headerdat['compsign']]['timeslices']==\
+			headerdat['calculations'][compsign]['timeslices']:
+			raise Exception('you asked for an alternate compsign by supplying the compsign flag '+\
+				'to the loader however the headerdat tells me that these computations were drawn '+\
+				'from different timeslices therefore I cannot allow you to proceed')
 	
 	#---retrieve	
 	datlist = {}

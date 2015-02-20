@@ -75,23 +75,23 @@ initconfig = """#!/usr/bin/python
 #-------------------------------------------------------------------------------------------------------------
 
 def niceblock(text,newlines=False):
-	'''Remove tabs so that large multiline text doesn't awkwardly wrap in the code.'''
+	"""Remove tabs so that large multiline text doesn't awkwardly wrap in the code."""
 	return re.sub('\n([\t])+',(' ' if not newlines else '\n'),re.sub('^\n([\t])+','',text))
 
 def docs(mods=None):
 
-	'''
+	"""
 	Regenerate the documentation using sphinx-apidoc and code in simuluxe/script-make-docs.sh
-	'''
+	"""
 
 	if mods != None and (mods == 'clean' or 'clean' in mods): os.system('cd docs/;make clean')
 	else: os.system('./simuluxe/script-make-docs.sh '+os.path.abspath('.'))
 	
 def init_local_config():
 	
-	'''
+	"""
 	Check for a local configuration in the home directory and make a blank one if absent.
-	'''
+	"""
 	
 	confpath = os.path.expanduser('~/.simuluxe_config.py')
 	if not os.path.isfile(confpath):
@@ -107,9 +107,9 @@ def init_local_config():
 
 def addpath(datapath=None):
 
-	'''
+	"""
 	Add extra paths to simulation data to the local configuration.
-	'''
+	"""
 
 	new = init_local_config()
 	import smx
@@ -122,9 +122,9 @@ def addpath(datapath=None):
 
 def addconfig(setfile=None):
 
-	'''
+	"""
 	Add extra configuration and settings files to the local configuration.
-	'''
+	"""
 	
 	new = init_local_config()
 	import smx
@@ -139,10 +139,10 @@ def addconfig(setfile=None):
 			
 def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False,roots=None):
 
-	'''
+	"""
 	Parse simulation data directories, load paths into a new configuration file, and check that it's in
 	the config file.
-	'''
+	"""
 	
 	new = init_local_config()
 	import smx
@@ -170,20 +170,83 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False,r
 	if new: addconfig(infofile)
 	reload(smx)
 	
+def merge_simdicts(paths,setfiles):
+
+	"""
+	Loads and merges simdicts from multiple files in order to put both the timestamp simdict and the 
+	slices simdict into the same data structure.
+	"""
+	
+	for sd in ([paths['simdicts']] if type(paths['simdicts']) == str else paths['simdicts']):
+		if type(sd) == str: setfiles.append(os.path.expanduser(sd))
+		elif type(sd) == dict: setfiles.append(os.path.expanduser(sd['file']))
+		else: raise Exception('simdicts entry in paths[project] must be either a string '+\
+			'or a dictionary with file and type (edrtime,slices) keys')
+	partslist = lambda pl : [int(re.findall('^md\.part([0-9]{4})',
+		[i[k] for k in ['edr','xtc','trr'] if k in i][0])[0]) 
+		for i in pl if any([j in i.keys() for j in ['edr','xtc','trr']])]
+	collect_simdicts = []
+	sdfiles = [i for i in setfiles if re.search('simdict',i)]
+	extract_dict = {}
+	execfile(sdfiles[0],extract_dict)
+	simdict = dict(extract_dict['simdict']) if 'simdict' in extract_dict else {}
+	for fn in (sdfiles[1:] if len(sdfiles)>1 else []): 
+		extract_dict = {}
+		execfile(fn,extract_dict)
+		addsd = dict(extract_dict['simdict'])
+		for sn_header in addsd:
+			if sn_header not in simdict: simdict[sn_header] = addsd[sn_header]
+			else:
+				if addsd[sn_header]['root'] != addsd[sn_header]['root']: 
+					raise Exception('conflicting root directories')
+				else:
+					for step in addsd[sn_header]['steps']:
+						#---for each new step see if the directory is in simdict
+						stepdirs = [i['dir'] for i in simdict[sn_header]['steps']]
+						if not step['dir'] in stepdirs: simdict[sn_header]['steps'].append(step)
+						else:
+							#---pull out the step in simdict with the right dir (no redundancies)
+							oldstep = [i for i in simdict[sn_header]['steps'] if i['dir']==step['dir']][0]
+							#---collate lists
+							for listname in ['trajs','trajs_gro','key_files']:
+								if listname in step:
+									if listname not in oldstep: oldstep[listname] = step[listname]
+									else: oldstep[listname].extend([
+										i for i in step[listname] if i not in oldstep[listname]])
+							#---collate parts
+							if 'parts' in step: 
+								if 'parts' not in oldstep: oldstep['parts'] = step['parts']
+								else:
+									oldpl = partslist(oldstep['parts'])
+									newpl = partslist(step['parts'])
+									for pnum in newpl:
+										part_add = step['parts'][newpl.index(pnum)]
+										if not pnum in oldpl: oldstep['parts'].append(part_add)
+										else: oldstep['parts'][oldpl.index(pnum)].update(part_add)
+
+	"""
+	Structure of a "simdict":
+	dict by simnames
+	each dict has a root entry and a steps dict
+	each steps is a list by step
+	each step is a dict with key_files, dir, trajs, and parts
+	each part is a dict with: edr,trr,xtc,edrstamp
+	note that the dictionaries are merged to preserve this structure and combine parts by index
+	"""
+	return simdict
+	
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 
-'''
-Functions exposed to makefile:
-def avail
+"""
+functions exposed to makefile:
 def timeslice
-def catalog
-'''
+"""
 
 def makeface(arglist):
-	'''
+	"""
 	Interface to makefile.
-	'''
+	"""
 
 	#---print help if no arguments
 	if arglist == []:

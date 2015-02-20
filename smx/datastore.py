@@ -46,6 +46,7 @@ def load(name,path,verbose=False):
 	Load an h5py datastore.
 	"""
 	path = os.path.abspath(os.path.expanduser(path))
+	if not os.path.isfile(path+'/'+name): return 'fail'
 	data = {}
 	rawdat = h5py.File(path+'/'+name,'r')
 	for key in [i for i in rawdat if i!='meta']: 
@@ -53,7 +54,10 @@ def load(name,path,verbose=False):
 			print '[READ] '+key
 			print '[READ] object = '+str(rawdat[key])
 		data[key] = numpy.array(rawdat[key])
-	attrs = json.loads(rawdat['meta'].value)
+	if 'meta' in rawdat: attrs = json.loads(rawdat['meta'].value)
+	else: 
+		print '[WARNING] no meta in this pickle'
+		attrs = {}
 	for key in attrs: data[key] = attrs[key]
 	rawdat.close()
 	return data
