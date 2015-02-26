@@ -19,7 +19,7 @@ def gmxpaths(pname): return pname+''
 #-------------------------------------------------------------------------------------------------------------
 
 def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
-	spider=False,timecheck_types=None,roots=None):
+	spider=False,timecheck_types=None,roots=None,no_slices=False):
 
 	"""
 	Parses all paths in datapaths to search for simulation data and returns a dictionary of base directories
@@ -111,34 +111,34 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 									step[typecheck+'stamp'].append('-'.join([
 										str((int(i) if round(i) == i else float(i))) for i in 
 										[starttime,starttime+nframes*timestep,timestep]]))
-
 						#---grab key files
-				
 						for kf in key_files:
 							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) if fn == kf]
 							if valids != []: simtree[top]['steps'][stepnum]['key_files'] = list(valids)
-						#---grab concatenated trajectory files
-						for suf in traj_suf:
-							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
-								if re.search(catted_re+suf+'$',fn)]
-							#---sort by part number
-							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
-							if valids != []: 
-								if 'trajs' in simtree[top]['steps'][stepnum].keys():
-									simtree[top]['steps'][stepnum]['trajs'].extend(list(valids))
-								else:
-									simtree[top]['steps'][stepnum]['trajs'] = list(valids)
-						#---grab gro files for concatenated trajectory files
-						for suf in ['gro']:
-							valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
-								if re.search(catted_re+suf+'$',fn)]
-							#---sort by part number
-							valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
-							if valids != []: 
-								if 'trajs_gro' in simtree[top]['steps'][stepnum].keys():
-									simtree[top]['steps'][stepnum]['trajs_gro'].extend(list(valids))
-								else:
-									simtree[top]['steps'][stepnum]['trajs_gro'] = list(valids)
+						#---disable addition of slices when simdict-time and simdict-slices are separate
+						if not no_slices:
+							#---grab concatenated trajectory files
+							for suf in traj_suf:
+								valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
+									if re.search(catted_re+suf+'$',fn)]
+								#---sort by part number
+								valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
+								if valids != []: 
+									if 'trajs' in simtree[top]['steps'][stepnum].keys():
+										simtree[top]['steps'][stepnum]['trajs'].extend(list(valids))
+									else:
+										simtree[top]['steps'][stepnum]['trajs'] = list(valids)
+							#---grab gro files for concatenated trajectory files
+							for suf in ['gro']:
+								valids = [fn for fn in os.listdir(dp+'/'+top+'/'+sd) 
+									if re.search(catted_re+suf+'$',fn)]
+								#---sort by part number
+								valids = [valids[k] for k in argsort([int(j[7:11]) for j in valids])]
+								if valids != []: 
+									if 'trajs_gro' in simtree[top]['steps'][stepnum].keys():
+										simtree[top]['steps'][stepnum]['trajs_gro'].extend(list(valids))
+									else:
+										simtree[top]['steps'][stepnum]['trajs_gro'] = list(valids)
 						
 	#---send dictionary back to controller to write to file
 	return simtree
@@ -263,7 +263,6 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		else: status('[WARNING] timestamps not aligned')
 	for ti,t in enumerate(tl[:-1]):
 		if tl[ti+1][2] <= tl[ti][3]: tl[ti+1][2] = tl[ti][3]+tl[ti][4]
-
 	#---default final file is in the directory of the first relevant trajectory file
 	outname = tl[0][1].strip('.'+form)+'.'+'-'.join([str(i)
 		for i in [tl[0][2],tl[-1][3],tl[0][4]]])+\
@@ -340,15 +339,16 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 			'-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
 			'-o '+systemgro,
 			'-b '+str(start),
+			'-t0 '+str(start),
 			'-e '+str(start),
 			'-dt '+str(timestep)])
-		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro-'+extraname+'.log',
+		call(cmd,logfile='log-slice-'+time+'-'+stepdir+'-'+partfile.strip('.'+form)+'-gro-'+extraname+'.log',
 		    cwd=cwd,inpipe='0\n')
 		#---create group file
 		cmd = ' '.join([gmxpaths('make_ndx'),
 			'-f '+systemgro,
 			'-o index-'+extraname+'.ndx'])
-		call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-make-ndx',
+		call(cmd,logfile='log-slice-'+time+'-'+stepdir+'-'+partfile.strip('.'+form)+'-make-ndx',
 		    cwd=cwd,inpipe='keep 0\n'+selection+'\nkeep 1\nq\n')
 		os.remove(systemgro)
 	
@@ -370,9 +370,10 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 				('-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr'
 					if selection != None or pbcmol else ''),
 				'-b '+str(start),
+				'-t0 '+str(start),
 				'-e '+str(end),
 				'-dt '+str(timestep)])
-			call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
+			call(cmd,logfile='log-slice-'+time+'-'+stepdir+'-'+partfile.strip('.'+form)+'.log',
 				cwd=cwd,inpipe=(None if selection != None else '0\n'))
 			#---save a gro file on the first part of the time slice
 			if ti == 0:
@@ -383,9 +384,10 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 					('-n index-'+extraname+'.ndx' if selection != None else ''),
 					'-s '+simdict[simname]['root']+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
 					'-b '+str(start),
+					'-t0 '+str(start),
 					'-e '+str(start),
 					'-dt '+str(timestep)])
-				call(cmd,logfile='log-timeslice-'+stepdir+'-'+partfile.strip('.'+form)+'-gro.log',
+				call(cmd,logfile='log-slice-'+time+'-'+stepdir+'-'+partfile.strip('.'+form)+'-gro.log',
 		            cwd=cwd,inpipe=(None if selection != None else '0\n'))
 
 	#---concatenate the slices
@@ -393,9 +395,37 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	cmd = ' '.join([gmxpaths('trjcat'),
 		'-f '+' '.join(slicefiles),
 		'-o '+final_name])
-	call(cmd,logfile='log-timeslice-trjcat-'+\
+	call(cmd,logfile='log-slice-'+time+'-trjcat-'+\
 		'-'.join([str(i) for i in [start,end,timestep]])+'.log',cwd=cwd)
 	for s in slicefiles: 
 		status('[STATUS] cleaning up '+str(s))
 		os.remove(s)
+		
+def scan_timestamps(trajfile):
+
+	"""
+	Given a trajfile check the available timestamps using MDAnalysis.
+	"""
+
+	import MDAnalysis,re
+	from numpy import array,arange
+
+	print('[CHECKING] '+trajfile)
+	grofile = trajfile[:-3]+'gro'
+	uni = MDAnalysis.Universe(grofile,trajfile)
+	supposed_times = [int(i) for i in 
+		re.findall('^.*?/?md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)',
+		trajfile)[0][:3]]
+	print('[REPORT] supposed times = '+str(supposed_times))
+	timeseries = []
+	for frnum,fr in enumerate(uni.trajectory):
+		status('[SCAN] frame ',i=frnum,looplen=len(uni.trajectory))
+		timeseries.append(int(uni.trajectory.ts.time))							
+	timeseries = array(timeseries)
+	desired_timeseries = arange(supposed_times[0],supposed_times[1]+supposed_times[2],supposed_times[2])
+	return {'miss':[i for i in desired_timeseries if i not in timeseries],
+		'grat':[i for i in timeseries if i not in desired_timeseries],
+		'stamp':'-'.join([str(i) for i in supposed_times]),
+		'times':timeseries}
+
 

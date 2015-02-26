@@ -39,6 +39,10 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 						timestamp=timestamp['time'],
 						wrap=calculations[compsign]['wrap'],
 						groupname=calculations[compsign]['groupname'])
+					#---if clock file available then pass timestamps along to compute function
+					if os.path.isfile(trajfile[:-3]+'clock'):
+						with open(trajfile[:-3]+'clock','r') as fp:
+							kwargs['times'] = [float(i) for i in fp.readlines()]
 				else: grofile,trajfile = None,None
 				#---get unique filename (we omit step designations and this requires non-redundant times)
 				#---we also drop any descriptors after the three-digit code
@@ -50,6 +54,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 					result,attrs = function(simname=sn,grofile=grofile,trajfile=trajfile,
 						metadat=metadat,focus=focus,panel=panel,headerdat=headerdat,**kwargs)
 					smx.store(result,name,dropspot,attrs=attrs)
+	checktime()
 
 def loader(focus,headerdat,sn=None,compsign=None):
 
@@ -83,7 +88,7 @@ def loader(focus,headerdat,sn=None,compsign=None):
 			if type(focus[panel][sn])==list:
 				for ts in focus[panel][sn]:
 					datlist_parted = {}
-					sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
+					sn_chop = re.findallf('(^[a-z]+-v[0-9]+)-?',sn)[0]
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+ts['time']+'.dat'
 					datlist_parted[(sn,ts['time'])] = smx.load(name,dropspot)
 					datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
