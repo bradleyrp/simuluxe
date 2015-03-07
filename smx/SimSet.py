@@ -1,5 +1,8 @@
+#!/usr/bin/python
 
-'''A class which wraps data from a molecular dynamics simulation.'''
+"""
+A class which wraps data from a molecular dynamics simulation.
+"""
 
 import MDAnalysis
 from smx import *
@@ -80,7 +83,9 @@ class SimSet:
 
 	def vec(self,frameno):
 
-		'''Returns box vectors and stores them for quicker retrieval.'''
+		"""
+		Returns box vectors and stores them for quicker retrieval.
+		"""
 
 		if frameno not in self.vecs_index:
 			if self.universe.trajectory.frame-1 != frameno: self.gotoframe(frameno)
@@ -89,5 +94,3 @@ class SimSet:
 			self.vecs_index.append(frameno)
 			return vec
 		else: return self.vecs[self.vecs_index.index(frameno)]
-
-

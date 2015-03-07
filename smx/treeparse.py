@@ -161,55 +161,6 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 #---LOOKUPS
 #-------------------------------------------------------------------------------------------------------------
 	
-def get_slices_deprecated(simname,simdict,groupname=None,timestamp=None,unique=True,wrap=None,**kwargs):
-	
-	"""
-	Return all post-processed slices of a simulation.
-	"""
-	
-	slist = []
-	re_group_timestamp = '^md\.part[0-9]{4}\.([0-9]+)\-([0-9]+)\-([0-9]+)'+\
-		'\.?([a-z,A-Z,0-9,_,-]+)?'+\
-		'\.?([a-z,A-Z,0-9,_,-]+)?'+\
-		'\.[a-z]{3}'
-	status('[CHECK] searching for slice: '+', '.join([key+' = '+str(locals()[key]) for key in 
-		['simname','timestamp','wrap','groupname']]))
-	for s in simdict[simname]['steps']:
-		#---devolved root: rootdir = simdict[simname]['root']
-		rootdir = s['root']
-		if 'trajs' in s.keys():
-			for t in s['trajs']:
-				if 'trajs_gro' in s.keys() and t[:-3]+'gro' in s['trajs_gro']:
-					add = False
-					regex = re.compile(re_group_timestamp)
-					specgroup = not groupname in ['all','',None]
-					#---no modifiers
-					if not specgroup and timestamp == None and wrap == None:
-						if regex.findall(t)[0][3] in ['all','',None]: add = True
-					#---group
-					elif specgroup and timestamp == None and wrap == None:
-						if regex.match(t) and regex.findall(t)[0][3] == groupname: add = True
-					elif not specgroup and timestamp != None and wrap == None:
-						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
-							regex.findall(t)[0][3] in ['all','',None]: add = True
-					elif specgroup and timestamp != None and wrap == None:
-						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
-						'-'.join(regex.findall(t)[0][:3])==timestamp: add = True
-					elif not specgroup and timestamp != None and wrap != None:
-						if regex.match(t) and '-'.join(regex.findall(t)[0][:3]) == timestamp and \
-						regex.findall(t)[0][4] == wrap and regex.findall(t)[0][3] in ['all','',None]:
-							add = True
-					elif specgroup and timestamp != None and wrap != None:
-						if regex.match(t) and regex.findall(t)[0][3]==groupname and \
-						'-'.join(regex.findall(t)[0][:3])==timestamp and \
-						regex.findall(t)[0][4] == wrap: add = True
-					if add: slist.append((rootdir+'/'+simname+'/'+s['dir']+'/'+t[:-3]+'gro',
-						rootdir+'/'+simname+'/'+s['dir']+'/'+t))
-	if unique and len(slist) != 1: raise Exception('except: non-unique slices available:\n'+\
-		'hint: did you forget to run \n"make update edrtime"?\nslice list = '+str(slist))
-	elif unique: return slist[0]
-	else: return slist
-
 def get_slices(simname,simdict,groupname=None,timestamp=None,
 	step=None,unique=True,wrap=None,verbose=False,**kwargs):
 	
@@ -247,6 +198,58 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,
 	elif unique and len(slist) > 1: raise Exception('non-unique slices available: slist = '+str(slist))
 	elif unique and len(slist) == 1: return slist[0]
 	elif not unique and len(slist)>1: return slist
+
+def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,useful=False):
+
+	"""
+	Given a simdict and a calculations dictionary, return a list of slices which cannot be found.
+	"""
+	
+	#---user must include project=project-NAME flag on the command line
+	missing_slices,useful_slices = [],[]
+	for compsign in calculations.keys():
+		#---filter comparisons
+		focus = dict([(comp,dict([(i,calculations[compsign]['timeslices'][i]) 
+			for i in calculations[compsign]['timeslices'] 
+			if i in comparisons[comp]])) 
+			for comp in calculations[compsign]['comparisons']])
+		for panel in focus:
+			sns = focus[panel] if name == None else [i for i in focus[panel] if i==name]
+			for sn in sns:
+				if not 'multislice' in calculations[compsign].keys():
+					multislices = [dict([(k,calculations[compsign][k]) 
+						for k in ['groupname','wrap','select_ndx'] 
+						if k in calculations[compsign]])]
+				else: multislices = calculations[compsign]['multislice']
+				if type(focus[panel][sn])==list: timestamps = [
+					dict(time=t['time'],step=t['step']) for t in focus[panel][sn]]
+				else: timestamps = [focus[panel][sn]]
+				for ms in multislices:
+					for timestamp in timestamps:
+						#---check to be sure that there is no conflict between groupname and selection
+						selection = ms['select_ndx'] if 'select_ndx' in ms.keys() else None
+						if ms['groupname'] in ['all','',None] and 'select_ndx' in ms.keys() and \
+							'select_ndx' != None:
+							raise Exception('cannot have a groupname that asks for the entire system '+\
+								'(e.g. \'\', None, or \'all\' without setting '+\
+								'select_ndx to None')
+						#---get slice information
+						grofile,trajfile = get_slices(sn,simdict,
+							timestamp=timestamp['time'],wrap=ms['wrap'],
+							groupname=ms['groupname'],metadat=metadat[sn])
+						if (grofile,trajfile) == (None,None) or useful:
+							new_ms = dict(calc=compsign,simname=sn,
+								timestamp=timestamp['time'],
+								wrap=ms['wrap'],groupname=ms['groupname'],
+								step=timestamp['step'])
+							if 'select_ndx' in ms.keys(): new_ms['select_ndx'] = ms['select_ndx']						
+						if (grofile,trajfile) == (None,None): missing_slices.append(new_ms)
+						elif useful and (grofile,trajfile) != (None,None): 
+							new_ms['grofile'] = grofile
+							new_ms['trajfile'] = trajfile
+							useful_slices.append(new_ms)
+	if useful: return missing_slices,useful_slices
+	else: return missing_slices
 
 #---TIME SLICE
 #-------------------------------------------------------------------------------------------------------------
@@ -493,6 +496,9 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	for s in slicefiles: 
 		status('[STATUS] cleaning up '+str(s))
 		os.remove(s)
+
+#---TIME CHECKING
+#-------------------------------------------------------------------------------------------------------------
 		
 def scan_timestamps(trajfile):
 
@@ -559,57 +565,3 @@ def timelist(simdict,project=None,name=None,get_slices=True):
 					if type(s) == list:
 						for i in s: print treechar+i
 					else: print treechar+s
-					
-def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,useful=False):
-
-	"""
-	Given a simdict and a calculations dictionary, return a list of slices which cannot be found.
-	"""
-	
-	#---user must include project=project-NAME flag on the command line
-	missing_slices,useful_slices = [],[]
-	for compsign in calculations.keys():
-		#---filter comparisons
-		focus = dict([(comp,dict([(i,calculations[compsign]['timeslices'][i]) 
-			for i in calculations[compsign]['timeslices'] 
-			if i in comparisons[comp]])) 
-			for comp in calculations[compsign]['comparisons']])
-		for panel in focus:
-			sns = focus[panel] if name == None else [i for i in focus[panel] if i==name]
-			for sn in sns:
-				if not 'multislice' in calculations[compsign].keys():
-					multislices = [dict([(k,calculations[compsign][k]) 
-						for k in ['groupname','wrap','select_ndx'] 
-						if k in calculations[compsign]])]
-				else: multislices = calculations[compsign]['multislice']
-				if type(focus[panel][sn])==list: timestamps = [
-					dict(time=t['time'],step=t['step']) for t in focus[panel][sn]]
-				else: timestamps = [focus[panel][sn]]
-				for ms in multislices:
-					for timestamp in timestamps:
-						#---check to be sure that there is no conflict between groupname and selection
-						selection = ms['select_ndx'] if 'select_ndx' in ms.keys() else None
-						if ms['groupname'] in ['all','',None] and 'select_ndx' in ms.keys() and \
-							'select_ndx' != None:
-							raise Exception('cannot have a groupname that asks for the entire system '+\
-								'(e.g. \'\', None, or \'all\' without setting '+\
-								'select_ndx to None')
-						#---get slice information
-						grofile,trajfile = get_slices(sn,simdict,
-							timestamp=timestamp['time'],wrap=ms['wrap'],
-							groupname=ms['groupname'],metadat=metadat[sn])
-						if (grofile,trajfile) == (None,None) or useful:
-							new_ms = dict(calc=compsign,simname=sn,
-								timestamp=timestamp['time'],
-								wrap=ms['wrap'],groupname=ms['groupname'],
-								step=timestamp['step'])
-							if 'select_ndx' in ms.keys(): new_ms['select_ndx'] = ms['select_ndx']						
-						if (grofile,trajfile) == (None,None): missing_slices.append(new_ms)
-						elif useful and (grofile,trajfile) != (None,None): 
-							new_ms['grofile'] = grofile
-							new_ms['trajfile'] = trajfile
-							useful_slices.append(new_ms)
-	if useful: return missing_slices,useful_slices
-	else: return missing_slices
-
-

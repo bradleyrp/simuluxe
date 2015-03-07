@@ -20,9 +20,11 @@ try:
 except: print 'missing python Image package'
 
 def store(obj,name,path,attrs=None):
+
 	"""
 	Use h5py to store a dictionary of data.
 	"""
+
 	if type(obj) != dict: raise Exception('except: only dictionaries can be stored')
 	if os.path.isfile(path+'/'+name): raise Exception('except: file already exists: '+path+'/'+name)
 	path = os.path.abspath(os.path.expanduser(path))
@@ -35,16 +37,20 @@ def store(obj,name,path,attrs=None):
 	fobj.close()
 	
 def lookup(name,path):	
+
 	"""
 	Check if a viable h5py file is prsent in path/name.
 	"""
+
 	path = os.path.abspath(os.path.expanduser(path))
 	return os.path.isfile(path+'/'+name)
 
 def load(name,path,verbose=False,filename=False,exclude_slice_source=False):
+
 	"""
 	Load an h5py datastore.
 	"""
+
 	path = os.path.abspath(os.path.expanduser(path))
 	if not os.path.isfile(path+'/'+name): return 'fail'
 	data = {}
@@ -72,6 +78,7 @@ def trace_slice_source(name,path):
 	Wrapper for load which gets the grofile and trajfile from a pickle (not loaded by default because it makes
 	keys easier to handle). It then checks for a clock file and if it exists, returns the timestamps.
 	"""
+
 	dat = load(name,path,exclude_slice_source=False)
 	grofile,trajfile = dat['grofile'],dat['trajfile']
 	del dat
@@ -81,9 +88,11 @@ def trace_slice_source(name,path):
 	return numpy.array(times)
 	
 def picturesave(directory,savename,meta=None):
+
 	"""
 	Function which saves the global matplotlib figure without overwriting.
 	"""
+
 	#---prevent overwriting the figure by making sequential backups
 	if os.path.isfile(directory+savename):
 		for i in range(1,100):
@@ -105,9 +114,11 @@ def picturesave(directory,savename,meta=None):
 		im.save(directory+savename,"png",pnginfo=imgmeta)
 	
 def picturedat(directory,savename,bank=False):
+
 	"""
 	Read metadata from figures with identical names.
 	"""
+
 	if not bank: 
 		if os.path.isfile(directory+savename): return Image.open(directory+savename).info
 		else: return
@@ -120,4 +131,3 @@ def picturedat(directory,savename,bank=False):
 			latestfile = '.'.join(base.split('.')[:-1])+'.bak'+('%02d'%i)+'.'+base.split('.')[-1]
 			if os.path.isfile(latestfile): dicts[latestfile] = Image.open(latestfile).info
 		return dicts
-

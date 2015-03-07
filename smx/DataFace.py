@@ -11,9 +11,11 @@ import psycopg2.extras
 class DataFace:
 
 	def __init__(self,**kwargs):
+		
 		"""
 		Postgresql database interface.
 		"""
+		
 		#---specify
 		if len(kwargs['dataspecs']) != 1: raise Exception('except: DataFace can only handle one object')
 		else: self.map = kwargs['dataspecs'][0]['map']
@@ -25,9 +27,11 @@ class DataFace:
 		for obj in kwargs['dataspecs']: self.table_exists(obj)
 		
 	def table_exists(self,obj):
+		
 		"""
 		Make a table if it is absent.
 		"""	
+		
 		self.cur.execute("select * from information_schema.tables where table_name=%s",
 			('dataref_'+obj['table'],))
 		if not bool(self.cur.rowcount): 
@@ -36,23 +40,29 @@ class DataFace:
 			self.ec(cmd+')')
 				
 	def ec(self,cmd):
+		
 		"""
 		Execute and commit a change to the database.
 		"""
+		
 		self.cur.execute(cmd)
 		self.conn.commit()
 		
 	def query(self,qry):
+		
 		"""
 		Return a database query using fetchall.
 		"""
+		
 		self.cur.execute(qry)
 		return self.cur.fetchall()
 
 	def new(self,**obj):
+		
 		"""
 		Simple function for adding values to a table.
 		"""
+		
 		#---incoming object must match the map in dataspecs
 		if set(obj.keys())!=set(self.map.keys()): raise Exception('incompatible object')
 		#---convert dictionaries to json format
@@ -69,9 +79,11 @@ class DataFace:
 		return index		
 		
 	def lookup(self,**obj):
+		
 		"""
 		Check for a record in the database.
 		"""	
+		
 		unpackers = [key for key in obj if type(obj[key])==dict]
 		lookup = self.query('SELECT * FROM dataref_'+self.table)
 		matches = [dict(l) for li,l in enumerate(lookup) if all([json.loads(l['meta'])[i]==obj['meta'][i] for i in obj['meta'].keys()])]
@@ -79,9 +91,11 @@ class DataFace:
 		else: return matches[0]
 		
 	def update(self,ind,**kwargs):
+		
 		"""
 		Update a row.
 		"""
+		
 		self.ec('UPDATE dataref_'+self.table+' SET ('+\
 			','.join(kwargs.keys())+') = ('+\
 			','.join(['\''+kwargs[key]+'\'' for key in kwargs.keys()])+\

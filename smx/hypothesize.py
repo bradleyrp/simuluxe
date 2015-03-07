@@ -3,9 +3,11 @@
 import copy
 
 def hypothesize(hypothesis_default,sweep):
+
 	"""
 	Code for sweeping an arbitrarily deep dictionary over many dimensions in combinations.
 	"""
+
 	#---extract a list of lists of parameters to sweep over
 	t = [i['values'] for i in sweep]
 	#---note that this non-numpythonic way of doing this has not been rigorously tested
@@ -41,6 +43,7 @@ def hypothesize(hypothesis_default,sweep):
 	return hypotheses,allcombos
 	
 def hypothesize_lookup(hypo,route): 
+
 	now = copy.deepcopy(hypo)
 	for i in route:
 		now = now[i]

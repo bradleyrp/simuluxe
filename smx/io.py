@@ -28,7 +28,8 @@ except:
 	except: status(missing_libxdr)
 		
 def trajectory_read(trrfile,get='velocities'):
-	'''
+
+	"""
 	Wrapper for MDAnalysis/libxdrfile for reading velocities or positions from a TRR file.\n
 	
 	Parameters
@@ -39,7 +40,8 @@ def trajectory_read(trrfile,get='velocities'):
 	Returns
 	-------
 	A tuple containing arrays of the positions and/or velocities (in that order), depending on the request.
-	'''
+	"""
+
 	#---parse
 	if type(get) == list: get = [get]
 	getv = True if ('v' in get or 'velocities' in get) else False

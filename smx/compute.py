@@ -215,7 +215,7 @@ def loadcat(datlist,focus,headerdat):
 	#---...but first we must ensure that the slicer gets the times right
 	return master_datlist
 	
-def i2s(*items,**kwargs):
+def i2s(*items):
 
 	"""
 	Concisely join arguments in order to perform a lookup on an h5py dictionary when storing frames with
@@ -224,6 +224,14 @@ def i2s(*items,**kwargs):
 	i2s function is particularly useful when storing e.g. the neighborlist and simplex list for different 
 	frames of a bilayer simulation. In this case, the objects could be stored as "FRAME.MONO.neighborlist". 
 	We use the dot because it cannot be found in a python variable name anyway.
+	"""
+	
+	return '.'.join([str(i) for i in items])
+
+def i2s2(*items,**kwargs):
+
+	"""
+	Alternate delimiter for i2s function.
 	"""
 	
 	delim = '.' if 'delim' not in kwargs else kwargs['delim']
