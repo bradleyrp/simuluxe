@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-print "[IMPORT] code-simuluxe/smx"
-if 'project_name' in globals(): print "project_name = "+project_name
+if 0: print "[IMPORT] code-simuluxe/smx"
+if 0 and 'project_name' in globals(): print "project_name = "+project_name
+
 #---conditional simuluxe imports
 import os
 if os.path.isfile(os.path.expanduser('~/.simuluxe_config.py')):

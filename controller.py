@@ -137,7 +137,8 @@ def addconfig(setfile=None):
 			with open(os.path.expanduser('~/.simuluxe_config.py'),'a') as fp:
 				fp.write("setfiles.append('"+fullpath+"')\n")
 			
-def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False,roots=None,no_slices=False):
+def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,
+	sure=False,roots=None,no_slices=False,verbose=False):
 
 	"""
 	Parse simulation data directories, load paths into a new configuration file, and check that it's in
@@ -150,7 +151,7 @@ def catalog(infofile=None,edrtime=False,xtctime=False,trrtime=False,sure=False,r
 	spider = True if any([xtctime,trrtime,edrtime]) else False
 	infofile = os.path.abspath(os.path.expanduser(infofile))
 	if os.path.isfile(infofile):
-		print '[NOTE] overwriting simdict file at '+infofile
+		if verbose: print '[NOTE] overwriting simdict file at '+infofile
 		if not sure and not confirm():
 			print 'cancel'
 			return
@@ -197,39 +198,36 @@ def merge_simdicts(paths,setfiles):
 		for sn_header in addsd:
 			if sn_header not in simdict: simdict[sn_header] = addsd[sn_header]
 			else:
-				if addsd[sn_header]['root'] != addsd[sn_header]['root']: 
-					raise Exception('conflicting root directories')
-				else:
-					for step in addsd[sn_header]['steps']:
-						#---for each new step see if the directory is in simdict
-						stepdirs = [i['dir'] for i in simdict[sn_header]['steps']]
-						if not step['dir'] in stepdirs: simdict[sn_header]['steps'].append(step)
-						else:
-							#---pull out the step in simdict with the right dir (no redundancies)
-							oldstep = [i for i in simdict[sn_header]['steps'] if i['dir']==step['dir']][0]
-							#---collate lists
-							for listname in ['trajs','trajs_gro','key_files']:
-								if listname in step:
-									if listname not in oldstep: oldstep[listname] = step[listname]
-									else: oldstep[listname].extend([
-										i for i in step[listname] if i not in oldstep[listname]])
-							#---collate parts
-							if 'parts' in step: 
-								if 'parts' not in oldstep: oldstep['parts'] = step['parts']
-								else:
-									oldpl = partslist(oldstep['parts'])
-									newpl = partslist(step['parts'])
-									for pnum in newpl:
-										part_add = step['parts'][newpl.index(pnum)]
-										if not pnum in oldpl: oldstep['parts'].append(part_add)
-										else: oldstep['parts'][oldpl.index(pnum)].update(part_add)
+				for step in addsd[sn_header]['steps']:
+					#---for each new step see if the directory is in simdict
+					stepdirs = [i['dir'] for i in simdict[sn_header]['steps']]
+					if not step['dir'] in stepdirs: simdict[sn_header]['steps'].append(step)
+					else:
+						#---pull out the step in simdict with the right dir (no redundancies)
+						oldstep = [i for i in simdict[sn_header]['steps'] if i['dir']==step['dir']][0]
+						#---collate lists
+						for listname in ['trajs','trajs_gro','key_files']:
+							if listname in step:
+								if listname not in oldstep: oldstep[listname] = step[listname]
+								else: oldstep[listname].extend([
+									i for i in step[listname] if i not in oldstep[listname]])
+						#---collate parts
+						if 'parts' in step: 
+							if 'parts' not in oldstep: oldstep['parts'] = step['parts']
+							else:
+								oldpl = partslist(oldstep['parts'])
+								newpl = partslist(step['parts'])
+								for pnum in newpl:
+									part_add = step['parts'][newpl.index(pnum)]
+									if not pnum in oldpl: oldstep['parts'].append(part_add)
+									else: oldstep['parts'][oldpl.index(pnum)].update(part_add)
 
 	"""
 	Structure of a "simdict":
 	dict by simnames
-	each dict has a root entry and a steps dict
+	each dict a steps list
 	each steps is a list by step
-	each step is a dict with key_files, dir, trajs, and parts
+	each step is a dict with key_files, dir, root dir, trajs, and parts
 	each part is a dict with: edr,trr,xtc,edrstamp
 	note that the dictionaries are merged to preserve this structure and combine parts by index
 	"""

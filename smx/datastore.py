@@ -41,7 +41,7 @@ def lookup(name,path):
 	path = os.path.abspath(os.path.expanduser(path))
 	return os.path.isfile(path+'/'+name)
 
-def load(name,path,verbose=False):
+def load(name,path,verbose=False,filename=False,exclude_slice_source=False):
 	"""
 	Load an h5py datastore.
 	"""
@@ -58,9 +58,27 @@ def load(name,path,verbose=False):
 	else: 
 		print '[WARNING] no meta in this pickle'
 		attrs = {}
+	if exclude_slice_source:
+		for key in ['grofile','trajfile']:
+			if key in attrs: del attrs[key]
 	for key in attrs: data[key] = attrs[key]
+	if filename: data['filename'] = path+'/'+name
 	rawdat.close()
 	return data
+	
+def trace_slice_source(name,path):
+
+	"""
+	Wrapper for load which gets the grofile and trajfile from a pickle (not loaded by default because it makes
+	keys easier to handle). It then checks for a clock file and if it exists, returns the timestamps.
+	"""
+	dat = load(name,path,exclude_slice_source=False)
+	grofile,trajfile = dat['grofile'],dat['trajfile']
+	del dat
+	if os.path.isfile(trajfile[:-3]+'clock'):
+		with open(trajfile[:-3]+'clock','r') as fp:
+			times = [float(i.strip('\n')) for i in fp.readlines()]
+	return numpy.array(times)
 	
 def picturesave(directory,savename,meta=None):
 	"""
