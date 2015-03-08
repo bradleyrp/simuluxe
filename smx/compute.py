@@ -29,21 +29,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 			else: timestamps = [focus[panel][sn]]
 			status('[REPORT] timestamps = '+str(timestamps))
 			for timestamp in timestamps:
-				#---get slice information
-				if get_slices:
-					#---omit step designation and only use time when getting the slices
-					#---...because the step designation tells you how to find the slice in makeslices
-					#---...we otherwise assume non-redundant time slices everywhere else
-					#---...this saves the hassle of having to distinguish e.g. a02-postproc and s9-lonestar
-					grofile,trajfile = smx.get_slices(sn,simdict,
-						timestamp=timestamp['time'],
-						wrap=calculations[compsign]['wrap'],
-						groupname=calculations[compsign]['groupname'])
-					#---if clock file available then pass timestamps along to compute function
-					if os.path.isfile(trajfile[:-3]+'clock'):
-						with open(trajfile[:-3]+'clock','r') as fp:
-							kwargs['times'] = [float(i) for i in fp.readlines()]
-				else: grofile,trajfile = None,None
+
 				#---get unique filename (we omit step designations and this requires non-redundant times)
 				#---we also drop any descriptors after the three-digit code
 				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
@@ -53,8 +39,26 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 				#---retain backwards compatibility with pickles with no stepcode in the name
 				if not os.path.isfile(dropspot+name): 
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+timestamp['time']+'.dat'				
+
 				#---check the repo and if absent compute and store the result
 				if not smx.lookup(name,dropspot):
+
+					#---get slice information
+					if get_slices:
+						#---omit step designation and only use time when getting the slices
+						#---...because the step designation tells you how to find the slice in makeslices
+						#---...we otherwise assume non-redundant time slices everywhere else
+						#---...this saves the hassle of having to distinguish e.g. a02-postproc and s9-lonestar
+						grofile,trajfile = smx.get_slices(sn,simdict,
+							timestamp=timestamp['time'],
+							wrap=calculations[compsign]['wrap'],
+							groupname=calculations[compsign]['groupname'])
+						#---if clock file available then pass timestamps along to compute function
+						if os.path.isfile(trajfile[:-3]+'clock'):
+							with open(trajfile[:-3]+'clock','r') as fp:
+								kwargs['times'] = [float(i) for i in fp.readlines()]
+					else: grofile,trajfile = None,None
+					
 					status(' '.join(['[COMPUTE]',compsign,sn]))
 					result,attrs = function(simname=sn,grofile=grofile,trajfile=trajfile,
 						metadat=metadat,focus=focus,panel=panel,headerdat=headerdat,**kwargs)
