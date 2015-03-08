@@ -74,7 +74,7 @@ def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=N
 	
 	if sn != None:
 		focus = [dict([(sn,dict([(sn,focus[f][sn])]))]) 
-		for f in focus if sn in focus[f]][0]
+			for f in focus if sn in focus[f]][0]
 
 	#---unload data from the header
 	dropspot = headerdat['dropspot']
@@ -234,7 +234,7 @@ def i2s2(*items,**kwargs):
 	Alternate delimiter for i2s function.
 	"""
 	
-	delim = '.' if 'delim' not in kwargs else kwargs['delim']
+	delim = ':' if 'delim' not in kwargs else kwargs['delim']
 	return delim.join([str(i) for i in items])
 	
 def compute_post_post_basic(compsign2,function,
@@ -263,7 +263,6 @@ def compute_post_post_basic(compsign2,function,
 			else: 
 				dat = loader(focus,headerdat,sn=sn,compsign=upstream)[sn]
 				result = function(sn,dat,**kwargs)
-			print result.keys()
 			smx.store(result,name,dropspot,attrs=kwargs)
 		else: status('[REPORT] found the post-post processing data')
 		
