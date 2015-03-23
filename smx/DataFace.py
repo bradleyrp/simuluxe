@@ -20,6 +20,7 @@ class DataFace:
 		if len(kwargs['dataspecs']) != 1: raise Exception('except: DataFace can only handle one object')
 		else: self.map = kwargs['dataspecs'][0]['map']
 		self.table = kwargs['dataspecs'][0]['table']
+		
 		#---connect
 		try: self.conn = psycopg2.connect(kwargs['dbconnect_string'])
 		except: raise Exception('except: unable to connect to database')
@@ -86,7 +87,8 @@ class DataFace:
 		
 		unpackers = [key for key in obj if type(obj[key])==dict]
 		lookup = self.query('SELECT * FROM dataref_'+self.table)
-		matches = [dict(l) for li,l in enumerate(lookup) if all([json.loads(l['meta'])[i]==obj['meta'][i] for i in obj['meta'].keys()])]
+		matches = [dict(l) for li,l in enumerate(lookup) 
+			if all([json.loads(l['meta'])[i]==obj['meta'][i] for i in obj['meta'].keys()])]
 		if len(matches)!=1: return None
 		else: return matches[0]
 		

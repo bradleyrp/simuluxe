@@ -54,11 +54,10 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 							wrap=calculations[compsign]['wrap'],
 							groupname=calculations[compsign]['groupname'])
 						#---if clock file available then pass timestamps along to compute function
-						if os.path.isfile(trajfile[:-3]+'clock'):
+						if trajfile != None and os.path.isfile(trajfile[:-3]+'clock'):
 							with open(trajfile[:-3]+'clock','r') as fp:
 								kwargs['times'] = [float(i) for i in fp.readlines()]
 					else: grofile,trajfile = None,None
-					
 					status(' '.join(['[COMPUTE]',compsign,sn]))
 					result,attrs = function(simname=sn,grofile=grofile,trajfile=trajfile,
 						metadat=metadat,focus=focus,panel=panel,headerdat=headerdat,**kwargs)
@@ -104,8 +103,8 @@ def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=N
 		for sn in focus[panel]:
 			if not check: status(' '.join(['[LOAD]',compsign,sn]))
 			if type(focus[panel][sn])==list:
+				datlist_parted = {}
 				for ts in focus[panel][sn]:
-					datlist_parted = {}
 					sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
 					stepcode = re.findall('^([a-z][0-9]{1,2})',ts['step'])[0]
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+ts['time']+'.dat'
@@ -115,9 +114,9 @@ def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=N
 					if check:
 						if os.path.isfile(dropspot+name): picklelist['found'].append(name)
 						else: picklelist['missing'].append(name)
-					else:
-						datlist_parted[(sn,ts['time'])] = smx.load(name,dropspot)
-						datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
+					else: 
+						datlist_parted[(sn,ts['time'],ts['step'])] = smx.load(name,dropspot)
+				if not check: datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
 			else: 
 				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
 				stepcode = re.findall('^([a-z][0-9]{1,2})',focus[panel][sn]['step'])[0]
@@ -151,26 +150,37 @@ def loadcat(datlist,focus,headerdat):
 	#---unpack
 	comparisons = headerdat['comparisons']
 
-	sns = [i[0] for i in datlist.keys()]
+	sns = list(set([i[0] for i in datlist.keys()]))
 	slicekeys = [[i for i in datlist.keys() if i[0]==sn] for sn in sns]
 	slicekeys = [i for i in slicekeys if i!=[]]
-	print str(slicekeys)
-	print datlist.keys()
-	raw_input('?')
+	status('[LOADING] concatenation')
 	master_datlist = {}
 	for snnum,sks in enumerate(slicekeys):
+		status('[STITCH] '+str(sks))
 		sn = sns[snnum]
-		#---make sure these pickles can be accurately stitched together by checking timestamp contiguity
-		timelist = np.sort([[int(k) for k in i[1].split('-')] for i in slicekeys[0]],axis=0)
-		if not all([timelist[i][1]==timelist[i+1][0] for i in range(len(timelist)-1)]):
-			raise Exception('time stamps are non-contiguous: '+str(timelist))
-		if not all([timelist[0][2]==timelist[i][2] for i in range(1,len(timelist))]):
-			raise Exception('time stamps have unequal step sizes '+str(timelist))
-		#---reorder the datlist keys
-		sks = [sks[j] for j in np.argsort([[int(k) for k in i[1].split('-')] 
-			for i in slicekeys[0]],axis=0)[:,0]]
+		#---resort sks by starting time
+		sks = [sks[j] for j in np.argsort([[int(k) for k in i[1].split('-')][0] for i in sks])]
+		timelist = [[int(k) for k in i[1].split('-')] for i in sks]
+		if not all([timelist[i][1]==timelist[i+1][0] for i in range(len(timelist)-1)]) or \
+			not all([timelist[0][2]==timelist[i][2] for i in range(1,len(timelist))]):
+			status('[WARNING] these simulations have un-synchronized times but we concatenate anyway')
+			
+			print timelist
+			print 
+			stepnames = list(set([i[2] for i in sks]))
+			stepnames = [stepnames[j] for j in np.argsort([int(re.findall('^[a-z]([0-9]+)',i)[0]) 
+				for i in stepnames])]
+			bystep = [[i for i in sks if i[2]==s] for s in stepnames]
+			sks = [m for n in [[b[j] for j in np.argsort([[int(k) 
+				for k in i[1].split('-')][0] for i in b])] for b in bystep] for m in n]
+		else:
+			#---reorder the datlist keys
+			sks = [sks[j] for j in np.argsort([[int(k) for k in i[1].split('-')] 
+				for i in slicekeys[0]],axis=0)[:,0]]
 		#---find keys that lack the period, indicating that they are general to 
 		#---...the calculation (and not frame-wise)
+		if any([datlist[sk]=='fail' for sk in sks]): 
+			raise Exception('missing sk pickle '+str([sk for sk in sks if datlist[sk]=='fail']))
 		general_keys = [[i for i in datlist[sk].keys() if '.' not in i] for sk in sks]
 		#---check that all pickles have the same list of general_keys
 		if not all([set(general_keys[ii])==set(general_keys[(ii+1)%len(sks)]) 
@@ -178,7 +188,6 @@ def loadcat(datlist,focus,headerdat):
 			raise Exception('pickles cannot be combined because they have unequal general keys')
 		#---identify the numbers of frames in each pickle
 		nframes_list = [datlist[sk]['nframes'] for sk in sks]
-		raw_input('sks='+str(sks))
 		nframes_apparent = [(timelist[i][1]-timelist[i][0])/timelist[i][2] for i in range(len(timelist))]
 		#---find the index in the numbered keys (i.e. those with a period) that 
 		#---...corresponds to the number of frames
@@ -190,7 +199,7 @@ def loadcat(datlist,focus,headerdat):
 			raise Exception('different time dimensions in framewise objects')
 		timedim = time_indices[0]
 		#---keys that must be present but not equivalent
-		general_keys_that_change = ['nframes','vecs']
+		general_keys_that_change = ['nframes','vecs','grofile','trajfile']
 		#---keys which must be equal between pickles
 		checklist = list(set([i for j in general_keys for i in j if i not in general_keys_that_change]))
 		#---list of keys which are not equal
@@ -205,8 +214,11 @@ def loadcat(datlist,focus,headerdat):
 		master_datlist[sn]['nframes'] = sum(nframes_list)
 		for si,sk in enumerate(sks[1:]):
 			for key in [i for i in general_keys_that_change if i!='nframes']:
-				master_datlist[sn][key] = np.concatenate((master_datlist[sn][key],datlist[sk][key]))
-			offset = nframes_list[si]
+				if type(master_datlist[sn][key]).__module__=='numpy':
+					master_datlist[sn][key] = np.concatenate((master_datlist[sn][key],datlist[sk][key]))
+				elif si==0: master_datlist[sn][key] = [master_datlist[sn][key],datlist[sk][key]]
+				else: master_datlist[sn][key].append(datlist[sk][key])
+			offset = sum(nframes_list[:si+1])
 			newtimes = np.sort(np.array([[int(k) for k in i.split('.')] 
 				for i in datlist[sk].keys() if '.' in i]),axis=0)
 			for fr in newtimes.take(timedim,axis=1):
@@ -252,21 +264,35 @@ def compute_post_post_basic(compsign2,function,
 	comparisons = headerdat['comparisons']
 
 	sns = list(np.unique([i for j in [comparisons[k] for k in focus] for i in j]))
-	timestamps = dict(list(np.unique([(sn,focus[f][sn]['time']) 
-		for sn in sns for f in focus if sn in focus[f]])))
+	timestamps = [focus[f][sn] for sn in sns for f in focus if sn in focus[f]]
 	for sn in sns:
 		status('[COMPUTE] post-post processing '+\
 			(upstream if type(upstream)==str else '+'.join(upstream))+\
 			' --> '+function.__name__+': '+sn)
-		name = 'postproc.'+compsign2+'.'+sn+'.'+timestamps[sn]+'.dat'
-		if not smx.lookup(name,dropspot):
-			if type(upstream) == list: 
-				dats = [loader(focus,headerdat,sn=sn,compsign=u,
-					compsign_original=kwargs['compsign_original'])[sn] for u in upstream]
-				result = function(sn,*dats,**kwargs)
-			else: 
-				dat = loader(focus,headerdat,sn=sn,compsign=upstream)[sn]
-				result = function(sn,dat,**kwargs)
-			smx.store(result,name,dropspot,attrs=kwargs)
-		else: status('[REPORT] found the post-post processing data')
-		
+			
+		for timestamp in timestamps:
+			
+			#---get unique filename (we omit step designations and this requires non-redundant times)
+			#---we also drop any descriptors after the three-digit code
+			sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
+			#---adding step code to the filename for future pickles 2015.3.4
+			stepcode = re.findall('^([a-z][0-9]{1,2})',timestamp['step'])[0]
+			name = 'postproc.'+compsign2+'.'+sn_chop+'.'+stepcode+'.'+timestamp['time']+'.dat'
+			#---retain backwards compatibility with pickles with no stepcode in the name
+			if not os.path.isfile(dropspot+name): 
+				name = 'postproc.'+compsign2+'.'+sn_chop+'.'+timestamp['time']+'.dat'				
+
+			if not smx.lookup(name,dropspot):
+				if type(upstream) == list: 
+					dats = [loader(focus,headerdat,sn=sn,compsign=u,
+						compsign_original=kwargs['compsign_original'])[sn] for u in upstream]
+					result = function(sn,*dats,**kwargs)
+				else: 
+					dat = loader(focus,headerdat,sn=sn,compsign=upstream)[sn]
+					result = function(sn,dat,**kwargs)
+				if len(result) == 2 and all([type(i)==dict for i in result]): result,attrs = result
+				else: attrs = {}
+				for k in kwargs: attrs[k] = kwargs[k]
+				smx.store(result,name,dropspot,attrs=attrs)
+			else: status('[REPORT] found the post-post processing data')
+

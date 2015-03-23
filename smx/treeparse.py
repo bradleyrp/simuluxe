@@ -221,8 +221,15 @@ def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,usefu
 						for k in ['groupname','wrap','select_ndx'] 
 						if k in calculations[compsign]])]
 				else: multislices = calculations[compsign]['multislice']
-				if type(focus[panel][sn])==list: timestamps = [
-					dict(time=t['time'],step=t['step']) for t in focus[panel][sn]]
+				#if type(focus[panel][sn])==list: timestamps = [
+				#	dict(time=t['time'],step=t['step']) for t in focus[panel][sn]]
+				if type(focus[panel][sn])==list:
+					timestamps = []
+					for t in focus[panel][sn]:
+						nd = {}
+						for key in ['time','step','clockbreak']:
+							if key in t: nd[key] = t[key]
+						timestamps.append(nd)
 				else: timestamps = [focus[panel][sn]]
 				for ms in multislices:
 					for timestamp in timestamps:
@@ -242,6 +249,7 @@ def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,usefu
 								timestamp=timestamp['time'],
 								wrap=ms['wrap'],groupname=ms['groupname'],
 								step=timestamp['step'])
+							if 'clockbreak' in timestamp: new_ms['clockbreak'] = timestamp['clockbreak']
 							if 'select_ndx' in ms.keys(): new_ms['select_ndx'] = ms['select_ndx']						
 						if (grofile,trajfile) == (None,None): missing_slices.append(new_ms)
 						elif useful and (grofile,trajfile) != (None,None): 
@@ -255,7 +263,8 @@ def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,usefu
 #-------------------------------------------------------------------------------------------------------------
 	
 def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selection=None,
-	pbcmol=False,wrap=None,simdict=None,disable_timecheck=True,infofile=None,metadat=None):
+	pbcmol=False,wrap=None,simdict=None,disable_timecheck=True,
+	infofile=None,metadat=None,clockbreak=None):
 
 	"""
 	Make a time slice.\n
@@ -310,7 +319,15 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 	#---check if the time span is big enough
 	if not any([j[2] <= start for j in tl]): status('[WARNING] time segment runs too early')
 	if not any([j[3] >= end for j in tl]): status('[WARNING] time segment runs too late')
-
+	
+	#---a clockbreak allows you to have changes in the universal clock across steps
+	#---...as is the case when you have multiple replicates in subsequent steps
+	#---...in those cases you should add a clockbreak that gives the stepname of the last valid step
+	#---...in that sense the step is like the first step, while clockbreak is the last
+	if clockbreak!=None:
+		breakstep = int(re.findall('^[a-z]([0-9]+)',clockbreak)[0])
+		tl = [t for t in tl if int(re.findall('^[a-z]([0-9]+)',t[0])[0])<=breakstep]
+	
 	#---in some edge cases the simulation starts from an earlier time so we use the more recent slice
 	for i in range(len(tl)-1):
 		if tl[i][3] > tl[i+1][2]:
@@ -461,7 +478,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 					'-s '+rootdir+'/'+simname+'/'+stepdir+'/'+partfile[:-4]+'.tpr',
 					'-b '+str(tl[ti][2]),
 					'-t0 '+str(tl[ti][2]),
-					'-e '+str(tl[ti][3]),
+					'-e '+str(tl[ti][2]),
 					'-dt '+str(timestep)])
 				logfile = logfile='log-slice-'+stepdir+'-'+time+'-'+partfile.strip('.'+form)+'.gro.log'
 				call(cmd,logfile,cwd=cwd,inpipe=(None if selection != None else '0\n'))
@@ -485,7 +502,9 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 				'-dt '+str(timestep)])
 			call(cmd,logfile='log-slice-'+stepdir+'-'+time+'-'+partfile+'.log',
 				cwd=cwd,inpipe=(None if selection != None else '0\n'))
-		elif ti==0: raise Exception('backwards timestep at the beginning skips gro')
+		elif ti==0: 
+			raise Exception('backwards timestep at the beginning skips gro'+
+				'\nnote that you may need to specify a clock break')
 
 	#---concatenate the slices
 	slicefiles = [cwd+s[1].strip('.'+form)+'_slice.'+form for s in tl_trimmed]

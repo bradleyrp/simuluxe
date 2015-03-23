@@ -19,7 +19,7 @@ try:
 	from PIL import PngImagePlugin
 except: print 'missing python Image package'
 
-def store(obj,name,path,attrs=None):
+def store(obj,name,path,attrs=None,print_types=False):
 
 	"""
 	Use h5py to store a dictionary of data.
@@ -31,7 +31,9 @@ def store(obj,name,path,attrs=None):
 	if not os.path.isdir(path): os.mkdir(path)
 	fobj = h5py.File(path+'/'+name,'w')
 	for key in obj.keys(): 
-		if 0: print '[WRITING] '+key
+		if print_types: 
+			print '[WRITING] '+key+' type='+str(type(obj[key]))
+			print '[WRITING] '+key+' dtype='+str(obj[key].dtype)
 		dset = fobj.create_dataset(key,data=obj[key])
 	if attrs != None: fobj.create_dataset('meta',data=numpy.string_(json.dumps(attrs)))
 	fobj.close()

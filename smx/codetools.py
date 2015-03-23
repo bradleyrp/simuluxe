@@ -173,16 +173,16 @@ def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 		}[depth] if depth <= 1 else (
 		''.join([('|' if d not in last else ' ')+' '*wide for d in range(1,depth)])
 		)+'+'+'-'*wide
-	if type(obj) == str: 
+	if type(obj) in [str,float,int]: 
 		if depth == 0: print spacer+str(obj)+'\n'+'-'*len(obj)
 		else: print spacer+str(obj)
-	#---in case there is only one dictionary we give it extra depth
-	#elif type(obj) == dict and all([type(i)==str for i in obj.values()]) and depth==0:
-	elif type(obj) == dict and all([type(i)==str for i in obj.values()]) and depth==0:
+	#---in case there is only one dictionary we give it extra depth ...
+	#---elif type(obj) == dict and all([type(i)==str for i in obj.values()]) and depth==0:
+	elif type(obj) == dict and all([type(i) in [str,float,int] for i in obj.values()]) and depth==0:
 		asciitree({'HASH':obj},depth=1,recursed=True)
 	elif type(obj) == list:
 		for ind,item in enumerate(obj):
-			if type(item)==str: print spacer+item
+			if type(item) in [str,float,int]: print spacer+str(item)
 			elif item != {}:
 				print spacer+'('+str(ind)+')'
 				asciitree(item,depth=depth+1,
@@ -192,7 +192,7 @@ def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 		for ind,key in enumerate(obj.keys()):
 			if type(obj[key])==str: print spacer+key+' = '+str(obj[key])
 			#---special: print single-item lists of strings on the same line as the key
-			elif type(obj[key])==list and len(obj[key])==1 and type(obj[key][0])==str: 
+			elif type(obj[key])==list and len(obj[key])==1 and type(obj[key][0]) in [str,float,int]: 
 				print spacer+key+' = '+str(obj[key])
 			#---special: skip lists if blank dictionaries
 			elif type(obj[key])==list and all([i=={} for i in obj[key]]): pass
