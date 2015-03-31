@@ -53,6 +53,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 						#---...and s9-lonestar
 						grofile,trajfile = smx.get_slices(sn,simdict,
 							timestamp=timestamp['time'],
+							step=timestamp['step'],
 							wrap=calculations[compsign]['wrap'],
 							groupname=calculations[compsign]['groupname'])
 						#---if clock file available then pass timestamps along to compute function
