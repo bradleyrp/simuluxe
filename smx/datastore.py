@@ -36,6 +36,7 @@ def store(obj,name,path,attrs=None,print_types=False):
 			print '[WRITING] '+key+' dtype='+str(obj[key].dtype)
 		dset = fobj.create_dataset(key,data=obj[key])
 	if attrs != None: fobj.create_dataset('meta',data=numpy.string_(json.dumps(attrs)))
+	status('[WRITING] '+path+'/'+name)
 	fobj.close()
 	
 def lookup(name,path):	

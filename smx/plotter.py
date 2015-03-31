@@ -33,7 +33,6 @@ def colorscale(name='RdBu',count=10,cmap=None,cmap_segname=None,reverse=False):
 	if cmap != None: thiscmap = cmap
 	elif cmap_segname != None: thiscmap = LinearSegmentedColormap(cmap_segname,cdict1)	
 	else: thiscmap = plt.cm.get_cmap(name)
-
 	return [thiscmap(i) for i in np.array(range(0,count)[::(-1 if reverse else 1)])/float(count)]
 
 

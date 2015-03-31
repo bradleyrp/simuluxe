@@ -88,7 +88,10 @@ class DataFace:
 		unpackers = [key for key in obj if type(obj[key])==dict]
 		lookup = self.query('SELECT * FROM dataref_'+self.table)
 		matches = [dict(l) for li,l in enumerate(lookup) 
-			if all([json.loads(l['meta'])[i]==obj['meta'][i] for i in obj['meta'].keys()])]
+			if (
+			all([i in json.loads(l['meta']) for i in obj['meta']]) and 
+			all([json.loads(l['meta'])[i]==obj['meta'][i] for i in obj['meta'].keys()])
+			)]
 		if len(matches)!=1: return None
 		else: return matches[0]
 		
