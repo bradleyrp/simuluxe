@@ -122,12 +122,13 @@ def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=N
 					sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
 					stepcode = re.findall('^([a-z][0-9]{1,2})',ts['step'])[0]
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+ts['time']+'.dat'
+					stepname = str(name)
 					#---retain backwards compatibility with pickles with no stepcode in the name
 					if not os.path.isfile(dropspot+name): 
 						name = 'postproc.'+compsign+'.'+sn_chop+'.'+ts['time']+'.dat'
 					if check:
 						if os.path.isfile(dropspot+name): picklelist['found'].append(name)
-						else: picklelist['missing'].append(name)
+						else: picklelist['missing'].append(stepname)
 					else: 
 						datlist_parted[(sn,ts['time'],ts['step'])] = smx.load(name,dropspot)
 				if not check: datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
@@ -135,12 +136,13 @@ def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=N
 				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
 				stepcode = re.findall('^([a-z][0-9]{1,2})',focus[panel][sn]['step'])[0]
 				name = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+focus[panel][sn]['time']+'.dat'
+				stepname = str(name)
 				#---retain backwards compatibility with pickles with no stepcode in the name
 				if not os.path.isfile(dropspot+name): 
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+focus[panel][sn]['time']+'.dat'
 				if check:
 					if os.path.isfile(dropspot+name): picklelist['found'].append(name)
-					else: picklelist['missing'].append(name)
+					else: picklelist['missing'].append(stepname)
 				else:
 					datlist[sn] = smx.load(name,dropspot)
 	if check: return picklelist

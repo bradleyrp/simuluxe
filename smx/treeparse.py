@@ -186,8 +186,7 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,
 					nd = regex.findall(t)[0]
 					fits = [
 						(wrap==None or nd[nm['wrap']]==wrap),
-						(step==None or re.findall('^([a-z][0-9]{1,2})-',
-							nd[nm['step']])==re.findall('^([a-z][0-9]{1,2})-',step)),
+						(step==None or nd[nm['step']].split('-')[0]==step.split('-')[0]),
 						(timestamp==None or timestamp=='-'.join(nd[nm['timestamp']])),
 						((groupname in ['all','',None] and nd[nm['groupname']] in ['all','',None]) 
 							or (groupname==nd[nm['groupname']])),
