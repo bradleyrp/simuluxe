@@ -186,7 +186,8 @@ def get_slices(simname,simdict,groupname=None,timestamp=None,
 					nd = regex.findall(t)[0]
 					fits = [
 						(wrap==None or nd[nm['wrap']]==wrap),
-						(step==None or nd[nm['step']]==re.findall('^([a-z][0-9]{1,2})-',step)),
+						(step==None or re.findall('^([a-z][0-9]{1,2})-',
+							nd[nm['step']])==re.findall('^([a-z][0-9]{1,2})-',step)),
 						(timestamp==None or timestamp=='-'.join(nd[nm['timestamp']])),
 						((groupname in ['all','',None] and nd[nm['groupname']] in ['all','',None]) 
 							or (groupname==nd[nm['groupname']])),
@@ -243,7 +244,7 @@ def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,usefu
 						#---get slice information
 						grofile,trajfile = get_slices(sn,simdict,
 							timestamp=timestamp['time'],wrap=ms['wrap'],
-							groupname=ms['groupname'],metadat=metadat[sn])
+							groupname=ms['groupname'],metadat=metadat[sn],step=timestamp['step'])
 						if (grofile,trajfile) == (None,None) or useful:
 							new_ms = dict(calc=compsign,simname=sn,
 								timestamp=timestamp['time'],
