@@ -25,10 +25,11 @@ def colorscale(name='RdBu',count=10,cmap=None,cmap_segname=None,reverse=False):
 	Divide a matplotlib color map into discrete colors.
 	"""
 
+	#---note that you should replace this with LinearSegmentedColormap.from_list()
 	cdict1 = {
 		'red':((0.0, 0.0, 0.0),(0.5, 0.0, 0.1),(1.0, 1.0, 1.0)),
-		'green': ((0.0, 0.0, 0.0),(1.0, 0.0, 0.0)),
-		'blue':  ((0.0, 0.0, 1.0),(0.5, 0.1, 0.0),(1.0, 0.0, 0.0))
+		'green':((0.0, 0.0, 0.0),(1.0, 0.0, 0.0)),
+		'blue':((0.0, 0.0, 1.0),(0.5, 0.1, 0.0),(1.0, 0.0, 0.0))
 		}
 	if cmap != None: thiscmap = cmap
 	elif cmap_segname != None: thiscmap = LinearSegmentedColormap(cmap_segname,cdict1)	

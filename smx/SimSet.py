@@ -20,8 +20,10 @@ class SimSet:
 		#---files
 		self.universe_structfile = ''
 		self.universe_trajfile = ''
+		#---blank selections
+		self.selections = []
 		
-	def load_trajectory(self,files,resolution=None,lenscale=None):
+	def load_trajectory(self,*args,**kwargs):
 
 		"""
 		Load a molecular dynamics trajectory into the MembraneSet instance.
@@ -43,6 +45,12 @@ class SimSet:
 			downstream units are in nanometers.
 		   
 		"""
+
+		#---unpack
+		resolution = None if 'resolution' not in kwargs else kwargs['resolution']
+		lenscale = None if 'lenscale' not in kwargs else kwargs['lenscale']
+		if len(args)==1: files = args[0]
+		else: files = args
 		
 		#---default lengthscale is 10 because many MD programs use Angstroms and we compute in nm
 		self.lenscale = lenscale if lenscale != None else 10.
@@ -94,3 +102,4 @@ class SimSet:
 			self.vecs_index.append(frameno)
 			return vec
 		else: return self.vecs[self.vecs_index.index(frameno)]
+		

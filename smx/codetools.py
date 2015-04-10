@@ -25,6 +25,24 @@ global_start_time = time.time()
 #---classic python argsort
 def argsort(seq): return [x for x,y in sorted(enumerate(seq), key = lambda x: x[1])]
 
+#---trim a dictionary
+def whittledict(d,l): return dict([(k,d[k]) for k in l])
+
+#---deep dive into a dictionary of dictionaries ad infinitum
+def delve(o,*k): return delve(o[k[0]],*k[1:]) if len(k)>1 else o[k[0]]
+
+def dictslicer(d,w):
+	
+	"""
+	Recursively select subsets of a dictionary. This function takes a dictionary followed by a selector
+	which can be either a list of keys or a dictionary that must contain a strings or list of strings on 
+	its deepest leaves.
+	"""
+	
+	if type(w)==dict: return dict([(key,dictslicer(d[key],w[key])) for key in w])
+	elif type(w)==list: return dict([(key,d[key]) for key in w])
+	else: return {w:d[w]}
+
 def call(command,logfile=None,cwd=None,silent=False,inpipe=None):
 
 	"""

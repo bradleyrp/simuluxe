@@ -55,7 +55,8 @@ def load(name,path,verbose=False,filename=False,exclude_slice_source=False):
 	"""
 
 	path = os.path.abspath(os.path.expanduser(path))
-	if not os.path.isfile(path+'/'+name): return 'fail'
+	if not os.path.isfile(path+'/'+name): 
+		raise Exception('[ERROR] failed to load '+path+'/'+name)
 	data = {}
 	rawdat = h5py.File(path+'/'+name,'r')
 	for key in [i for i in rawdat if i!='meta']: 
@@ -90,7 +91,7 @@ def trace_slice_source(name,path):
 			times = [float(i.strip('\n')) for i in fp.readlines()]
 	return numpy.array(times)
 	
-def picturesave(directory,savename,meta=None):
+def picturesave(directory,savename,meta=None,extras=[]):
 
 	"""
 	Function which saves the global matplotlib figure without overwriting.
@@ -107,7 +108,7 @@ def picturesave(directory,savename,meta=None):
 		else: 
 			status('status: backing up '+directory+savename+' to '+latestfile)
 			os.rename(directory+savename,latestfile)
-	plt.savefig(directory+savename,dpi=300)
+	plt.savefig(directory+savename,dpi=300,bbox_extra_artists=extras,bbox_inches='tight')
 	plt.close()
 	#---add metadata to png
 	if meta != None:
@@ -123,7 +124,7 @@ def picturedat(directory,savename,bank=False):
 	"""
 
 	if not bank: 
-		if os.path.isfile(directory+savename): return Image.open(directory+savename).info
+		if os.path.isfile(directory+savename): return json.loads(Image.open(directory+savename).info['meta'])
 		else: return
 	else:
 		dicts = {}
@@ -132,5 +133,6 @@ def picturedat(directory,savename,bank=False):
 		for i in range(1,100):
 			base = directory+savename
 			latestfile = '.'.join(base.split('.')[:-1])+'.bak'+('%02d'%i)+'.'+base.split('.')[-1]
-			if os.path.isfile(latestfile): dicts[latestfile] = Image.open(latestfile).info
+			if os.path.isfile(latestfile): dicts[latestfile] = json.loads(Image.open(latestfile).info)
 		return dicts
+		

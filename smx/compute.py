@@ -38,7 +38,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
 				#---adding step code to the filename for future pickles 2015.3.4
 				stepcode = re.findall('^([a-z][0-9]{1,2})',timestamp['step'])[0]
-				name_step = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+timestamp['time']+'.dat'
+				name_step = 'postproc.'+compsign_store+'.'+sn_chop+'.'+stepcode+'.'+timestamp['time']+'.dat'
 				#---retain backwards compatibility with pickles with no stepcode in the name
 				name = 'postproc.'+compsign_store+'.'+sn_chop+'.'+timestamp['time']+'.dat'				
 				#---check the repo and if absent compute and store the result
@@ -56,6 +56,14 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 							step=timestamp['step'],
 							wrap=calculations[compsign]['wrap'],
 							groupname=calculations[compsign]['groupname'])
+						#---beginning to add step designations here instead of get_slices
+						if grofile==None and trajfile==None: 
+							grofile,trajfile = smx.get_slices(sn,simdict,
+								timestamp=timestamp['time'],
+								wrap=calculations[compsign]['wrap'],
+								groupname=calculations[compsign]['groupname'])
+							if trajfile!=None:
+								status('[NOTE] found old-school slice without sN designation '+trajfile)
 						#---if clock file available then pass timestamps along to compute function
 						if trajfile != None and os.path.isfile(trajfile[:-3]+'clock'):
 							with open(trajfile[:-3]+'clock','r') as fp:
@@ -66,7 +74,7 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 							status('[ERRORNOTE] timestamp = '+str(timestamp))
 							raise Exception('missing grofile/trajfile: '+str(grofile)+' '+str(trajfile))
 					else: grofile,trajfile = None,None
-					status(' '.join(['[COMPUTE]',compsign,sn]))
+					status(' '.join(['[COMPUTE]',compsign,sn,name_step]))
 					result,attrs = function(simname=sn,grofile=grofile,trajfile=trajfile,
 						metadat=metadat,focus=focus,panel=panel,headerdat=headerdat,**kwargs)
 					#---intervene to include grofile and trajfile in the metadat
@@ -84,11 +92,16 @@ def computer(focus,function,headerdat,simdict,get_slices=True,**kwargs):
 	#---reflect on how long this took
 	checktime()
 
-def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=None):
+def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=None,**kwargs):
 
 	"""
 	Universal procedure for unloading saved postprocessing data from the dropspot.
 	"""
+
+	#---override timeslice names to label combinations of timeslices with timename
+	timename = kwargs['timename'] if 'timename' in kwargs else False
+
+	#---simple flag 
 	
 	if sn != None:
 		focus = [dict([(sn,dict([(sn,focus[f][sn])]))]) 
@@ -119,31 +132,40 @@ def loader(focus,headerdat,sn=None,compsign=None,check=False,compsign_original=N
 			if not check: status(' '.join(['[LOAD]',compsign,sn]))
 			if type(focus[panel][sn])==list:
 				datlist_parted = {}
-				for ts in focus[panel][sn]:
-					sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
-					stepcode = re.findall('^([a-z][0-9]{1,2})',ts['step'])[0]
-					name = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+ts['time']+'.dat'
-					stepname = str(name)
-					#---retain backwards compatibility with pickles with no stepcode in the name
-					if not os.path.isfile(dropspot+name): 
-						name = 'postproc.'+compsign+'.'+sn_chop+'.'+ts['time']+'.dat'
-					if check:
-						if os.path.isfile(dropspot+name): picklelist['found'].append(name)
-						else: picklelist['missing'].append(stepname)
-					else: 
-						datlist_parted[(sn,ts['time'],ts['step'])] = smx.load(name,dropspot)
-				if not check: datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
+				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
+				if type(timename) != str:
+					for ts in focus[panel][sn]:
+						stepcode = re.findall('^([a-z][0-9]{1,2})',ts['step'])[0]
+						name = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+ts['time']+'.dat'
+						name_step = str(name)
+						#---retain backwards compatibility with pickles with no stepcode in the name
+						if not os.path.isfile(dropspot+name): 
+							name = 'postproc.'+compsign+'.'+sn_chop+'.'+ts['time']+'.dat'
+						if check:
+							if os.path.isfile(dropspot+name): picklelist['found'].append(name)
+							else: picklelist['missing'].append(name_step)
+						else: 
+							datlist_parted[(sn,ts['time'],ts['step'])] = smx.load(name,dropspot)
+				if type(timename)==str:
+					#---when timename is used to label lists of timeslices it will not find them above
+					name = 'postproc.'+compsign+'.'+sn_chop+'.'+timename+'.dat'
+					datlist[sn] = smx.load(name,dropspot)
+				elif len(focus[panel][sn])==1 and not check:
+					#---if only one slice then we just pass it along
+					datlist[sn] = datlist_parted[(sn,ts['time'],ts['step'])]
+				elif not check: 
+					datlist[sn] = loadcat(datlist_parted,focus,headerdat)[sn]
 			else: 
 				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
 				stepcode = re.findall('^([a-z][0-9]{1,2})',focus[panel][sn]['step'])[0]
 				name = 'postproc.'+compsign+'.'+sn_chop+'.'+stepcode+'.'+focus[panel][sn]['time']+'.dat'
-				stepname = str(name)
+				name_step = str(name)
 				#---retain backwards compatibility with pickles with no stepcode in the name
 				if not os.path.isfile(dropspot+name): 
 					name = 'postproc.'+compsign+'.'+sn_chop+'.'+focus[panel][sn]['time']+'.dat'
 				if check:
 					if os.path.isfile(dropspot+name): picklelist['found'].append(name)
-					else: picklelist['missing'].append(stepname)
+					else: picklelist['missing'].append(name_step)
 				else:
 					datlist[sn] = smx.load(name,dropspot)
 	if check: return picklelist
@@ -223,6 +245,11 @@ def loadcat(datlist,focus,headerdat):
 		checklist = list(set([i for j in general_keys for i in j if (i not in general_keys_that_change and 
 			i not in ['wrap','timesamp','groupname'])]))
 		#---list of keys which are not equal
+		for key in checklist:
+			print key
+			print [(k if type(k)==bool else all(k)) 
+				for k in [datlist[sks[s]][key]==datlist[sks[(s+1)%len(sks)]][key] 
+				for s in range(len(sks))]]
 		nomatch_check = [[(k if type(k)==bool else all(k)) 
 			for k in [datlist[sks[s]][key]==datlist[sks[(s+1)%len(sks)]][key] 
 			for s in range(len(sks))]] for key in checklist]
@@ -235,6 +262,8 @@ def loadcat(datlist,focus,headerdat):
 		for si,sk in enumerate(sks[1:]):
 			for key in [i for i in general_keys_that_change if i!='nframes' if i in datlist[sk]]:
 				if type(master_datlist[sn][key]).__module__=='numpy':
+					print np.shape(master_datlist[sn][key])
+					print np.shape(datlist[sk][key])
 					master_datlist[sn][key] = np.concatenate((master_datlist[sn][key],datlist[sk][key]))
 				elif si==0: master_datlist[sn][key] = [master_datlist[sn][key],datlist[sk][key]]
 				else: master_datlist[sn][key].append(datlist[sk][key])
@@ -285,12 +314,11 @@ def compute_post_post_basic(compsign2,function,
 	dropspot = headerdat['dropspot']
 	comparisons = headerdat['comparisons']
 	written_anything = False
+	timename = kwargs['timename'] if 'timename' in kwargs else False
 
 	for panel in focus:
 		for sn in focus[panel]:
-			if type(focus[panel][sn])==list: timestamps = focus[panel][sn]
-			else: timestamps = [focus[panel][sn]]
-
+			
 			#---previously we looped over a compacted list
 			if 0: sns = list(np.unique([i for j in [comparisons[k] for k in focus] for i in j]))
 			if 0: timestamps = [focus[f][sn] for sn in sns for f in focus if sn in focus[f]]
@@ -298,33 +326,67 @@ def compute_post_post_basic(compsign2,function,
 			status('[COMPUTE] post-post processing '+\
 				(upstream if type(upstream)==str else '+'.join(upstream))+\
 				' --> '+function.__name__+': '+sn)
-
-			for timestamp in timestamps:
 			
-				#---get unique filename (we omit step designations and this requires non-redundant times)
-				#---we also drop any descriptors after the three-digit code
-				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
-				#---adding step code to the filename for future pickles 2015.3.4
-				stepcode = re.findall('^([a-z][0-9]{1,2})',timestamp['step'])[0]
-				name = 'postproc.'+compsign2+'.'+sn_chop+'.'+stepcode+'.'+timestamp['time']+'.dat'
-				#---retain backwards compatibility with pickles with no stepcode in the name
-				if not os.path.isfile(dropspot+name): 
-					name = 'postproc.'+compsign2+'.'+sn_chop+'.'+timestamp['time']+'.dat'				
+			#---the timename flag ensures that the post-post-processing function is only run once for 
+			#---...any set of timeslices, instead of once per slice, where the timename string contains
+			#---...the name that describes the timeslices list in the filename
+			if timename != False:
 
+				sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
+				name = 'postproc.'+compsign2+'.'+sn_chop+'.'+timename+'.dat'
 				if not smx.lookup(name,dropspot):
-					focus_trim = dict(focus)
-					focus_trim[panel][sn] = timestamp
 					if type(upstream) == list: 
-						dats = [loader(focus_trim,headerdat,sn=sn,compsign=u,
-							compsign_original=kwargs['compsign_original'])[sn] for u in upstream]
+						dats = [loader(focus,headerdat,sn=sn,compsign=u,
+							compsign_original=kwargs['compsign_original'])[sn] 
+							for u in upstream]
 						result = function(sn,*dats,**kwargs)
 					else: 
-						dat = loader(focus_trim,headerdat,sn=sn,compsign=upstream)[sn]
+						dat = loader(focus,headerdat,sn=sn,compsign=upstream)[sn]
 						result = function(sn,dat,**kwargs)
 					if len(result) == 2 and all([type(i)==dict for i in result]): result,attrs = result
 					else: attrs = {}
-					for k in kwargs: attrs[k] = kwargs[k]
+					nosave = [] if 'nosave' not in kwargs else kwargs['nosave']
+					for k in [j for j in kwargs if j not in nosave]: attrs[k] = kwargs[k]
 					smx.store(result,name,dropspot,attrs=attrs)
 					written_anything = True
 				else: status('[REPORT] found the post-post processing data')
+
+			#---one computation per slice in timeslices
+			else:
+
+				if type(focus[panel][sn])==list: timestamps = focus[panel][sn]
+				else: timestamps = [focus[panel][sn]]
+
+				#---one computation per slice in timeslices
+				for timestamp in timestamps:
+				
+					#---get unique filename (we omit step designations and this requires non-redundant times)
+					#---we also drop any descriptors after the three-digit code
+					sn_chop = re.findall('(^[a-z]+-v[0-9]+)-?',sn)[0]
+					#---adding step code to the filename for future pickles 2015.3.4
+					stepcode = re.findall('^([a-z][0-9]{1,2})',timestamp['step'])[0]
+					name = 'postproc.'+compsign2+'.'+sn_chop+'.'+stepcode+'.'+timestamp['time']+'.dat'
+					name_step = str(name)
+					#---retain backwards compatibility with pickles with no stepcode in the name
+					if not os.path.isfile(dropspot+name): 
+						name = 'postproc.'+compsign2+'.'+sn_chop+'.'+timestamp['time']+'.dat'				
+					if not smx.lookup(name,dropspot):
+						focus_trim = dict(focus)
+						focus_trim[panel][sn] = timestamp
+						if type(upstream) == list: 
+							dats = [loader(focus_trim,headerdat,sn=sn,compsign=u,
+								compsign_original=kwargs['compsign_original'])[sn] for u in upstream]
+							result = function(sn,*dats,**kwargs)
+						else: 
+							dat = loader(focus_trim,headerdat,sn=sn,compsign=upstream)[sn]
+							result = function(sn,dat,**kwargs)
+						if len(result) == 2 and all([type(i)==dict for i in result]): result,attrs = result
+						else: attrs = {}
+						nosave = [] if 'nosave' not in kwargs else kwargs['nosave']
+						for k in [j for j in kwargs if j not in nosave]: attrs[k] = kwargs[k]
+						smx.store(result,name_step,dropspot,attrs=attrs)
+						written_anything = True
+					else: status('[REPORT] found the post-post processing data')
+
 	return written_anything
+	

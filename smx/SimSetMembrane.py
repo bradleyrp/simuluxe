@@ -374,7 +374,7 @@ class SimSetMembrane(SimSet):
 			return array([\
 				[p[i]-((int(p[i]/vecs[i])%2)*vecs[i] if i in dims else 0) \
 				for i in range(shape(points)[1])] for p in points])
-				
+
 	def get_points(self,frameno,selection_index=-1):
 		'''Shell function that returns coordinates for a pre-defined selection.'''
 		if self.universe.trajectory.frame-1 != frameno:

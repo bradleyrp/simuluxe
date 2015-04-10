@@ -18,6 +18,59 @@ def gmxpaths(pname): return pname+''
 #---CATALOG
 #-------------------------------------------------------------------------------------------------------------
 
+def merge_simdicts_pair(simtree,simtree_collate):
+
+	"""
+	Function which intelligently combines two simdicts.
+	Originally adapted from the controller which used this function to combine simdicts from multiple files.
+	It was added here for use in controller as well as the findsims function which would sometimes find
+	a simulation in two datapaths while making a single simdict file hence we have to merge before the simdict
+	is written.
+	"""
+
+	partslist = lambda pl : [int(re.findall('^md\.part([0-9]{4})',
+		[i[k] for k in ['edr','xtc','trr'] if k in i][0])[0]) 
+		for i in pl if any([j in i.keys() for j in ['edr','xtc','trr']])]	
+
+	for sn_header in simtree:
+		if sn_header not in simtree_collate: simtree_collate[sn_header] = simtree[sn_header]
+		else:
+			for step in simtree[sn_header]['steps']:
+				#---for each new step see if the directory is in simdict
+				stepdirs = [i['dir'] for i in simtree_collate[sn_header]['steps']]
+				if not step['dir'] in stepdirs: simtree_collate[sn_header]['steps'].append(step)
+				else:
+					#---pull out the step in simdict with the right dir (no redundancies)
+					oldstep = [i for i in simtree_collate[sn_header]['steps'] if i['dir']==step['dir']][0]
+					#---collate lists
+					for listname in ['trajs','trajs_gro','key_files']:
+						if listname in step:
+							if listname not in oldstep: oldstep[listname] = step[listname]
+							else: oldstep[listname].extend([
+								i for i in step[listname] if i not in oldstep[listname]])
+					#---collate parts
+					if 'parts' in step: 
+						if 'parts' not in oldstep: oldstep['parts'] = step['parts']
+						else:
+							oldpl = partslist(oldstep['parts'])
+							newpl = partslist(step['parts'])
+							for pnum in newpl:
+								part_add = step['parts'][newpl.index(pnum)]
+								if not pnum in oldpl: oldstep['parts'].append(part_add)
+								else: oldstep['parts'][oldpl.index(pnum)].update(part_add)	
+
+	"""
+	Structure of a "simdict":
+	dict by simnames
+	each dict a steps list
+	each steps is a list by step
+	each step is a dict with key_files, dir, root dir, trajs, and parts
+	each part is a dict with: edr,trr,xtc,edrstamp
+	note that the dictionaries are merged to preserve this structure and combine parts by index
+	"""
+	
+	return simtree_collate
+
 def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	spider=False,timecheck_types=None,roots=None,no_slices=False):
 
@@ -27,7 +80,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 	"""
 	
 	#--dictionary to hold simulation paths
-	simtree = dict()
+	simtree_collate,simtree = dict(),dict()
 
 	#---defaults to specify valid simulation folder prefixes of the form "name-vNUM"
 	if top_prefixes == None: top_prefixes = ['membrane','protein','mesomembrane'][:2]
@@ -43,6 +96,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 		'\.?([a-z,A-Z,0-9,_,-]+)?'+\
 		'\.?([a-z,A-Z,0-9,_,-]+)?'+\
 		'\.?'
+
 	#---search all datapaths for simulations
 	if roots == None: roots = datapaths
 	for dp in roots:
@@ -51,6 +105,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 			for (dirpath, dirnames, filenames) in os.walk(dp+'/'+top):
 				#---only parse one level
 				if dirpath == dp+'/'+top:
+					#---since one simulation may be found in multiple datapaths we merge later
 					simtree[top] = dict()
 					#---devolve root to step: simtree[top]['root'] = dp
 					steplist = [dn for dn in dirnames if re.search(r'^[a-z][0-9]{1,2}\-.+',dn)]
@@ -63,7 +118,7 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 					#---...timeslice functions
 					steplist = [steplist[j] for j in argsort([(ord(i[0])-96)*26+int(i[1:].split('-')[0]) 
 						for i in steplist])]
-					#---devolve root to the level of dir
+					simtree[top]['steps'] = []
 					simtree[top]['steps'] = [{'dir':step,'root':dp} for step in steplist]
 					#---loop over subdirectories
 					for stepnum,sd in enumerate(steplist):
@@ -154,9 +209,12 @@ def findsims(top_prefixes=None,valid_suffixes=None,key_files=None,
 										simtree[top]['steps'][stepnum]['trajs_gro'].extend(list(valids))
 									else:
 										simtree[top]['steps'][stepnum]['trajs_gro'] = list(valids)
-						
+
+					#---after each new entry to simtree, merge with the final, collated simtree
+					simtree_collate = merge_simdicts_pair(simtree,simtree_collate)
+
 	#---send dictionary back to controller to write to file
-	return simtree
+	return simtree_collate
 	
 #---LOOKUPS
 #-------------------------------------------------------------------------------------------------------------
@@ -244,6 +302,13 @@ def find_missing_slices(simdict,calculations,comparisons,metadat,name=None,usefu
 						grofile,trajfile = get_slices(sn,simdict,
 							timestamp=timestamp['time'],wrap=ms['wrap'],
 							groupname=ms['groupname'],metadat=metadat[sn],step=timestamp['step'])
+						#---beginning to add step designations here instead of get_slices
+						if grofile==None and trajfile==None: 
+							grofile,trajfile = get_slices(sn,simdict,
+								timestamp=timestamp['time'],wrap=ms['wrap'],
+								groupname=ms['groupname'],metadat=metadat[sn])
+							if trajfile!=None:
+								status('[NOTE] found old-school slice without sN designation '+trajfile)
 						if (grofile,trajfile) == (None,None) or useful:
 							new_ms = dict(calc=compsign,simname=sn,
 								timestamp=timestamp['time'],
@@ -293,7 +358,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 
 	#---unpack the timestamp
 	start,end,timestep = [int(i) for i in time.split('-')]
-	
+
 	#---generate timeline from relevant files
 	tl = []
 	stepnums = [j['dir'] for j in simdict[simname]['steps']].index(step)
@@ -302,7 +367,6 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		if 'parts' in stepdict.keys():
 			for part in stepdict['parts']:
 				if form in part.keys() and 'edrstamp' in part.keys():
-					#---devolve root to step objects by adding root here 
 					seg = [stepdict['dir']]+[part[form]]+[float(i) 
 						for i in part['edrstamp'].split('-')]+[timestep]+[stepdict['root']]
 					if (start <= seg[3] and start >= seg[2]) or (end <= seg[3] and end >= seg[2]) or \
@@ -314,6 +378,20 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 						else: t1 = int(seg[3]/timestep)*timestep
 						seg[2:4] = t0,t1
 						tl.append(seg)
+
+	#---remove any redundant 1-frame timelines based on their start times
+	droptls = [t for t in range(len(tl)-1) if tl[t][2]==tl[t+1][2]]
+	for td in droptls[::-1]: tl.pop(td)
+
+	#---check for backwards slices and recommend a gmxcheck
+	if any([tl[t][3]<tl[t][2] for t in range(len(tl))]):
+		raise Exception('[ERROR] backwards time so use gmxcheck to confirm the '+\
+			'start/end times timeline='+str(tl))
+
+	#---if you have redundant copies of the data we check for duplicated entries
+	if len(list(set([i[1] for i in tl])))!=len(tl):
+		status('[WARNING] duplicated part entries in the timeline so you may have redundant copies '+\
+			'also re-run make update edrtime if you change the edr files')
 					
 	status('[REPORT] timeline = '+str(tl))
 	#---check if the time span is big enough
@@ -422,8 +500,13 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 		#---if selection is a dict with an 'atoms' entry, we reformat it for make_ndx
 		if type(selection)==dict:
 			selection_string = []
+			if 'exclude_rule' in selection.keys():
+				rule = selection['exclude_rule']
+				if metadat[simname][rule[0]]==rule[1]: exclude_atoms = rule[2]
+			else: exclude_atoms = []			
 			if 'atoms' in selection.keys():
-				selection_string.append(' | '.join(['a '+i for i in selection['atoms']]))
+				selection_string.append(' | '.join(['a '+i 
+					for i in selection['atoms'] if i not in exclude_atoms]))
 			if 'residues' in selection.keys():
 				selection_string.append(' | '.join(['r '+i for i in selection['residues']]))
 			if 'atoms_from_meta' in selection.keys() and metadat!=None:
@@ -431,7 +514,7 @@ def timeslice(simname,step,time,form,path=None,pathletter='a',extraname='',selec
 					for i in metadat[simname][j]]))
 			elif 'atoms_from_meta' in selection.keys() and metadat==None:
 				raise Exception('cannot find metadat to determine atom types')
-			selection_string = ' | '.join(selection_string)
+			selection_string = ' | '.join([i for i in selection_string if i!=''])
 			if selection_string == '':
 				raise Exception('unclear selection dictionary for make_ndx: '+str(selection))
 			selection = selection_string
